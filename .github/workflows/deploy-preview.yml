@@ -1,49 +1,106 @@
-name: Deploy preview to GitHub Pages
+name: Inky:Bit development preview
 
 on:
   push:
     branches:
       - feature/inkybit-image-editor-v1
+  pull_request:
+    branches:
+      - feature/inkybit-image-editor-v1
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: inkybit-preview-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+    outputs:
+      extension-sha: ${{ steps.pins.outputs.extension }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the exact target revision
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Read the extension pin
+        id: pins
+        run: echo "extension=$(node -p \"require('./inkybit-toolchain.json').extension.commit\")" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the exact extension revision
+        uses: actions/checkout@v4
+        with:
+          repository: enricoconductive/pxt-inkybit
+          ref: ${{ steps.pins.outputs.extension }}
+          path: libs/inkybit
+
+      - name: Use the pinned Node.js release
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: .nvmrc
           cache: npm
 
-      - name: Install dependencies
+      - name: Use the pinned npm release
+        run: npm install --global npm@11.18.0
+
+      - name: Verify exact revisions
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C libs/inkybit rev-parse HEAD)" = "${{ steps.pins.outputs.extension }}"
+          git merge-base --is-ancestor "$(node -p \"require('./inkybit-toolchain.json').target.upstreamCommit\")" HEAD
+
+      - name: Test the pinned extension
+        working-directory: libs/inkybit
+        run: |
+          npm ci
+          npm run verify:default-image
+          npm run test:native-loader
+          npm run test:extension
+
+      - name: Install the locked target toolchain
         run: npm ci
 
-      - name: Build static package
-        run: npx pxt staticpkg
+      - name: Test target codec and pinned integration
+        run: |
+          npm run test:inkybit-codec
+          npm run test:inkybit-integration
 
-      - name: Upload artifact
+      - name: Build labelled static package with the pinned consumer
+        env:
+          PREVIEW_TARGET_SHA: ${{ github.sha }}
+        run: |
+          mkdir -p .preview
+          cp pxtarget.json .preview/pxtarget.original.json
+          trap 'cp .preview/pxtarget.original.json pxtarget.json' EXIT
+          npm run preview:prepare
+          npx pxt staticpkg --route pxt-microbit --output built/packaged --no-appcache
+          npm run preview:finalize
+          npm run preview:verify
+
+      - name: Install headless Chromium
+        run: npx puppeteer browsers install chrome-headless-shell
+
+      - name: Run browser preview smoke
+        run: npm run preview:smoke
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: built/
+          path: built/packaged/pxt-microbit
 
   deploy:
-    needs: build
+    if: github.event_name == 'push'
+    needs: build-and-test
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy development preview to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

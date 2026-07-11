@@ -20,6 +20,9 @@ hexcache
 build
 crowdinstats.csv
 .pxt/
+.preview/
+libs/inkybit/
+.playwright-cli/
 
 *.user
 *.sw?

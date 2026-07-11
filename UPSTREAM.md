@@ -1,83 +1,90 @@
-# Upstream Contribution: Custom Field Editor for Bitmap Images
+# Upstream delivery: Inky:Bit image field
 
-This document describes the `inkyimage` custom field editor contributed to
-`pxt-microbit` and what would be needed to upstream it as a generic
-MakeCode capability.
+This is a ready-to-review proposal description, not a claim that Microsoft has
+accepted or deployed the change.
 
-## What was added
+## Proposed pxt-microbit PR
 
-A custom Blockly field editor that provides a pixel-level image editor for
-the Pimoroni Inky:Bit display (250×120 pixels, 3-colour: white, black, red).
-The editor renders as a full-screen overlay inside the MakeCode editor and
-supports drawing tools (pencil, eraser, line, rectangle, circle, text) with
-a live preview in the block's thumbnail.
+**Title:** Add a versioned Inky:Bit full-screen image field
 
-The editor produces a compact hex-encoded bitmap that is embedded directly
-in the user's code via `hex\`...\`` literals.
+**Problem:** `pxt-inkybit` needs a block field that edits a 250x120 three-colour
+bitmap while preserving a compact, stable value that the extension can decode
+on hardware. A text fallback would expose a 15,020-character literal and is not
+an acceptable reduced editor.
 
-## Files containing the contribution
+**Target-only change:**
 
-| File | Purpose |
-|------|---------|
-| `fieldeditors/inkyImageField.ts` | `FieldBase` subclass; bridges Blockly ↔ editor overlay |
-| `fieldeditors/inkyImageEditor.ts` | Self-contained HTML/CSS/JS overlay with all drawing tools |
-| `fieldeditors/inkyBitFont.ts` | 5×5 bitmap font (pendolino3) for the text tool |
-| `fieldeditors/extensions.ts` | Registration of the `"inkyimage"` selector with PXT |
+| File | Responsibility |
+| --- | --- |
+| `fieldeditors/inkyImageCodec.ts` | IBIT v1 validation, encode/decode and hex literal boundary |
+| `fieldeditors/inkyImageField.ts` | Blockly value/thumbnail/editor lifecycle only |
+| `fieldeditors/inkyImageEditor.ts` | Drawing UI and tools |
+| `fieldeditors/inkyBitFont.ts` | Fixed 5x5 text glyph data |
+| `fieldeditors/extensions.ts` | Registers selector `inkyimage` |
+| `tests/inkybit-codec/*` | Golden, malformed, round-trip and literal tests |
 
-Supporting codec (used by the above, but not new code):
-`fieldeditors/inkyImageCodec.ts`.
+No Pimoroni C++ driver, SPI code, package source, or hardware dependency belongs
+in the target PR. Capacity benchmarks and the extension integration fixture are
+review evidence, not required upstream production files.
 
-## PXT core capabilities used
+## Stable interface
 
-- **`FieldBase`** (`pxt.blocks.FieldBase`) — base class for custom fields;
-  provides `getValue()`, `setValue()`, `createMainElement_()`, and editor
-  lifecycle hooks.
-- **Blockly integration** — the field constructs a DOM element that Blockly
-  positions; it listens for Blockly selection events to open/close the
-  editor overlay.
-- **`pxt.editor.initFieldExtensionsAsync`** — the entry point PXT calls to
-  discover custom field editors at startup.
+- Selector: `inkyimage`.
+- Serialized value: `hex` literal containing IBIT v1 bytes.
+- Header: magic `IBIT`, version `1`, palette `1`, width `250`, height `120`.
+- Payload: 30,000 two-bit pixels packed four per byte; total 7,510 bytes.
+- Colours: `0` white, `1` black, `2` accent red; `3` is rejected.
+- Unknown version, palette, dimensions, length, or colour is rejected; there is
+  no silent fallback.
+- `decompileLiterals=true` and parent-block ownership preserve Blocks/XML to
+  TypeScript round trips.
 
-## What would change to make this generic
+The concrete consumer is
+`enricoconductive/pxt-inkybit@39af70c3d257d65833c463641bb6eb963d64d09b`:
+`drawFullScreenImage(data: Buffer)` declares `data.shadow=inkyimage_picker`, and
+the hidden identity block declares `image.fieldEditor="inkyimage"`.
 
-1. **Remove Inky:Bit-specific constants** — replace the hardcoded 250×120
-   dimensions and 3-colour palette with configurable parameters passed
-   through the field definition (e.g. `{ width: 128, height: 64, palette: ['#000','#fff','#f00','#0f0'] }`).
+## Review commits and verification
 
-2. **Configurable palette** — the colour map in `COLOUR_MAP` (field and
-   editor) should accept an arbitrary `Record<number, string>` from the
-   block definition.
+The feature branch is based on upstream commit
+`4b304c58999bd330bc37b7fb01577e6122760ae3`. The target implementation is kept
+in reviewable layers:
 
-3. **Font data** — `inkyBitFont.ts` embeds the micro:bit V2 pendolino3
-   bitmap. A generic version would either make the font pluggable or ship
-   a default 5×5 font and allow overrides.
+1. `ded7dc40` - IBIT v1 codec foundation.
+2. `96eb14bd` - field lifecycle and placeholder editor.
+3. `f2420b09` - drawing tools and full editor.
+4. `f854c9e6` - pinned consumer integration and capacity evidence.
 
-4. **Encoding format** — the current encoder packs pixels into a dense
-   byte stream specific to 3-colour. A generic editor would need to
-   support variable colour depths (2-bit, 4-bit) or leave encoding to
-   the target package.
+Run before submission:
 
-5. **File naming** — rename files from `inky*` to something like
-   `bitmapImageField`, `bitmapImageEditor`, etc.
+```bash
+npm ci
+npm run test:inkybit-codec
+npm run test:inkybit-persistence
+npm run test:inkybit-integration
+```
 
-6. **Tests** — add round-trip encode/decode tests, editor render tests,
-   and Blockly integration tests (see below).
+The delivery workflow additionally builds the exact consumer into a static
+target and browser-boots the result from a clean checkout.
 
-## Suggested test plan for an upstream PR
+## Maintainer decisions requested
 
-| Test | Description |
-|------|-------------|
-| Encode/decode round-trip | Verify `encodeInkyBitImage(decodeInkyBitImage(data)) === data` for a set of known bitmaps and random bitmaps. |
-| Edge dimensions | Encode images at minimum (1×1) and maximum sizes; ensure no buffer overflows. |
-| Font glyph coverage | Render every ASCII character (32–126) and verify the bitmap matches the expected 5×5 pattern. |
-| Field value persistence | Open the editor, draw, save, re-open — verify the value round-trips through Blockly XML serialisation. |
-| Thumbnail rendering | Verify `renderPixelsToCanvas` produces a canvas of the expected dimensions. |
-| Cross-browser overlay | Open the editor overlay in Chromium, Firefox, and Safari; verify the canvas is interactive and closes cleanly. |
-| Static package smoke test | Run `pxt staticpkg` and open the generated `built/index.html`; verify the block can be dragged and the editor opens. |
+1. Is a product-specific selector acceptable in `pxt-microbit`, or should the
+   codec/editor become a configurable generic bitmap field first?
+2. If generic, which options are supported ABI: dimensions, palette, encoding,
+   font, maximum encoded length?
+3. Should the editor remain in target `fieldeditors`, or move to pxt-core after
+   another consumer exists?
 
-## Notes
+The smallest safe first PR is the target-only selector above. Generalising
+before an API contract is agreed would expand scope and risk changing the stable
+IBIT v1 format. If maintainers require a generic field, split that design into a
+separate prerequisite PR and keep the Inky:Bit codec adapter target-local.
 
-This contribution is provided as a reference implementation, not as a
-ready-to-merge upstream PR. A proper upstream submission would require
-agreement from the MakeCode team on the generic API surface and likely
-a design discussion per the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
+## Extension release gate
+
+Do not merge/tag/publish the selector consumer on public `pxt-inkybit/master`
+until the capability is accepted and released in a public micro:bit target, the
+extension pin is updated to that release, and the edit/save/reopen/compile browser
+journey passes there. The detailed checklist lives in
+`pxt-inkybit/docs/IMAGE_EDITOR_RELEASE.md`.

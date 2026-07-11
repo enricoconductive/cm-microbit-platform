@@ -13,6 +13,6 @@
     "extension": {
         "repository": "https://github.com/enricoconductive/pxt-inkybit.git",
         "upstream": "https://github.com/pimoroni/pxt-inkybit.git",
-        "commit": "5a5ad02f06e08eb6fa4c8068c3d0340f7349e28c"
+        "commit": "39af70c3d257d65833c463641bb6eb963d64d09b"
     }
 }

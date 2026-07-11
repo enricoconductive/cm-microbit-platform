@@ -1,107 +1,76 @@
-# Development: Self-hosted MakeCode Target
+# Inky:Bit development preview
 
-This document explains how to clone, build, and deploy the Inky:Bit
-self-hosted MakeCode target.
+This branch builds a development-only MakeCode target. It is visibly labelled
+`DEVELOPMENT PREVIEW - Inky:Bit Image Editor`; it is not public MakeCode and
+does not imply Microsoft or Pimoroni approval.
 
-## Prerequisites
+## Revisions
 
-- **Node.js 22.x** (see `.nvmrc` for the exact version)
-- **npm 11.x** (bundled with Node 22)
+`inkybit-toolchain.json` is authoritative. Every preview manifest records:
+
+- target revision: the workflow's exact `${GITHUB_SHA}`;
+- target upstream base: `4b304c58999bd330bc37b7fb01577e6122760ae3`;
+- extension revision: `39af70c3d257d65833c463641bb6eb963d64d09b`;
+- pxt-core `13.0.1`, pxt-common-packages `14.0.2`, Node `22.23.1`, and npm `11.18.0`.
+
+The manifest is published as `inkybit-preview-manifest.json` beside the editor.
+
+## Clean local build
+
+Clone the target and the exact extension revision, then build the routed static
+package. The preview helper verifies the extension Git commit before adapting
+only its `core` dependency to the target's sibling `libs/core` path.
 
 ```bash
-# If using nvm:
-nvm use          # reads .nvmrc → 22.23.1
-
-# Verify:
-node -v          # v22.x
-npm -v           # 11.x
-```
-
-## Clone and install
-
-```bash
-git clone https://github.com/Pimoroni/pxt-microbit.git
+git clone https://github.com/enricoconductive/pxt-microbit.git
 cd pxt-microbit
 git checkout feature/inkybit-image-editor-v1
+git clone https://github.com/enricoconductive/pxt-inkybit.git libs/inkybit
+git -C libs/inkybit checkout --detach 39af70c3d257d65833c463641bb6eb963d64d09b
+nvm use
+npm install --global npm@11.18.0
 npm ci
+cp pxtarget.json /tmp/pxtarget.json
+npm run preview:prepare
+npx pxt staticpkg --route pxt-microbit --output built/packaged --no-appcache
+PREVIEW_TARGET_SHA="$(git rev-parse HEAD)" npm run preview:finalize
+npm run preview:verify
+npx puppeteer browsers install chrome-headless-shell
+npm run preview:smoke
+cp /tmp/pxtarget.json pxtarget.json
 ```
 
-`npm ci` installs the exact versions from `package-lock.json` and is
-recommended over `npm install` for reproducible builds.
+Serve `built/packaged` and open `/pxt-microbit/`. The deployable Pages artifact
+root is `built/packaged/pxt-microbit`, because GitHub Pages already mounts that
+artifact at the repository route.
 
-## Load the Inky:Bit extension
+## CI and deployment
 
-The Inky:Bit extension is already bundled in this fork. The field editor
-registration lives in `fieldeditors/extensions.ts` and is compiled into
-`built/fieldeditors.js` during the normal build.
+`.github/workflows/deploy-preview.yml` runs on feature-branch pushes, pull
+requests, and manual dispatch. It checks out the extension by full SHA, verifies
+both Git revisions, runs extension, codec, native-loader and integration tests,
+builds `built/packaged/pxt-microbit`, verifies the manifest and bundled consumer,
+then boots the output in headless Chromium. Only a feature-branch `push` enters
+the Pages deployment job.
 
-If you need to modify the extension source:
+Repository Settings -> Pages must use **GitHub Actions** before the deploy job can
+publish. Until a successful Pages environment deployment exists, no public URL
+should be claimed.
 
-```bash
-# The field editor TypeScript files:
-ls fieldeditors/
-# extensions.ts            – PXT field registration
-# inkyImageField.ts        – Blockly field subclass
-# inkyImageEditor.ts       – pixel editor overlay
-# inkyBitFont.ts           – 5×5 bitmap font data
-# inkyImageCodec.ts        – encode/decode helpers
-```
+## Browser journey and boundary
 
-## Run the editor locally
+The automated browser smoke proves that the labelled editor boots, the exact
+bundled `inkybit` package exposes `inkyimage_picker`, and the `inkyimage` field
+bundle is loadable. On 12 July 2026 the generated package was also exercised in
+Chromium through: new project -> Extensions -> bundled `inkybit` -> drag
+full-screen image block -> open editor -> draw a pixel -> Done. A consumer call
+compiled with zero Monaco diagnostics.
 
-```bash
-npx pxt serve
-```
-
-This starts a local dev server (default `https://localhost:3232`) with
-live-reload. The browser opens the MakeCode editor; the Inky:Bit blocks
-appear under the Extensions menu.
-
-## Build a static package
-
-To produce a self-contained HTML/JS/CSS build in `built/`:
-
-```bash
-npx pxt staticpkg
-```
-
-The output in `built/` can be served by any static file server or
-deployed to GitHub Pages.
-
-## Deploy to GitHub Pages
-
-Deploys are handled by the GitHub Actions workflow in
-`.github/workflows/deploy-preview.yml`.
-
-**Trigger:** push to `feature/inkybit-image-editor-v1`.
-
-**What it does:**
-1. Checks out the code
-2. Sets up Node.js 22
-3. Runs `npm ci`
-4. Runs `npx pxt staticpkg`
-5. Deploys `built/` to GitHub Pages via `actions/deploy-pages@v4`
-
-**Enabling GitHub Pages:** In the repository settings, set the Pages
-source to "GitHub Actions" (not "Deploy from a branch").
-
-The deployed URL will be shown in the Actions deployment summary.
-
-## Run tests
-
-```bash
-# Inky:Bit codec unit tests
-npm run test:inkybit-codec
-
-# Integration build test (requires pxt buildtarget to have run first)
-npm run test:inkybit-integration
-```
-
-## Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| `pxt: command not found` | `npm install -g pxt` or use `npx pxt` |
-| Build fails with OOM | Increase Node memory: `NODE_OPTIONS=--max-old-space-size=4096 npx pxt buildtarget` |
-| GitHub Pages deploy 404 | Ensure Pages source is set to "GitHub Actions" in repo settings |
-| Field editor not showing | Check `built/fieldeditors.js` exists; clear browser cache |
+The full SVG drag/edit journey is not CI-gated because PXT/Blockly exposes the
+flyout block as overlapping SVG paths and the locked Puppeteer Chromium is older
+than the browser used for the manual journey, making pointer targeting unstable.
+Persistence and native compile are instead deterministic gates:
+`test:inkybit-persistence` verifies byte-exact save/reload and
+`test:inkybit-integration` compiles the pinned extension with a full IBIT image.
+Cloud sharing, login, and production compile-service parity are not provided by
+the static preview.

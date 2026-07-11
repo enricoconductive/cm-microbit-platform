@@ -24,7 +24,11 @@
         "test:inkybit-capacity": "node tests/inkybit-capacity/run-capacity.mjs",
         "test:inkybit-codec": "node node_modules/typescript/bin/tsc -p tests/inkybit-codec && node tests/inkybit-codec/codec.test.js",
         "test:inkybit-persistence": "npm run test:inkybit-codec && node tests/inkybit-capacity/run-persistence.mjs",
-        "test:inkybit-integration": "pxt buildtarget && node tests/inkybit-integration/generate-main.mjs && cd tests/inkybit-integration && ../../node_modules/.bin/pxt install && ../../node_modules/.bin/pxt build"
+        "test:inkybit-integration": "pxt buildtarget && node tests/inkybit-integration/generate-main.mjs && cd tests/inkybit-integration && ../../node_modules/.bin/pxt install && ../../node_modules/.bin/pxt build",
+        "preview:prepare": "node tools/prepare-inkybit-preview.mjs",
+        "preview:finalize": "node tools/finalize-inkybit-preview.mjs",
+        "preview:verify": "node tools/verify-inkybit-preview.mjs",
+        "preview:smoke": "node tools/smoke-inkybit-preview.mjs"
     },
     "files": [
         "README.md",
