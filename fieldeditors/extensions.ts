@@ -3,6 +3,7 @@
 
 import { FieldGestures } from "./field_gestures";
 import { FieldPinPicker } from "./field_pinPicker";
+import { FieldInkyImage } from "./inkyImageField";
 
 pxt.editor.initFieldExtensionsAsync = function (opts: pxt.editor.FieldExtensionOptions): Promise<pxt.editor.FieldExtensionResult> {
     pxt.debug('loading pxt-microbit field editors...')
@@ -15,6 +16,10 @@ pxt.editor.initFieldExtensionsAsync = function (opts: pxt.editor.FieldExtensionO
             {
                 selector: "pinpicker",
                 editor: FieldPinPicker
+            },
+            {
+                selector: "inkyimage",
+                editor: FieldInkyImage
             }
         ]
     };
