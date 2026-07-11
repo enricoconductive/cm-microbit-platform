@@ -2,6 +2,7 @@
 /// <reference path="../node_modules/pxt-core/built/pxtsim.d.ts"/>
 
 import { IBIT_WIDTH, IBIT_HEIGHT, IBIT_ENCODED_LENGTH, IBIT_PIXEL_COUNT, decodeInkyBitImage, encodeInkyBitImage, encodedImageToHexLiteral } from "./inkyImageCodec";
+import { InkyImageEditor } from "./inkyImageEditor";
 
 const pxtblockly = pxt.blocks.requirePxtBlockly();
 const Blockly = pxt.blocks.requireBlockly();
@@ -146,65 +147,13 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
     }
 
     showEditor_(): void {
-        if (this.errorBlock || !this.pixels) {
-            this.showPlaceholderEditor();
-            return;
-        }
-        this.showPlaceholderEditor();
-    }
-
-    private showPlaceholderEditor(): void {
         const currentPixels = this.pixels
             ? new Uint8Array(this.pixels)
             : new Uint8Array(IBIT_PIXEL_COUNT).fill(0);
 
-        const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
-
-        const modal = document.createElement('div');
-        modal.style.cssText = 'background:#fff;border-radius:8px;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:12px;';
-
-        const title = document.createElement('div');
-        title.textContent = 'Inky:Bit Image Editor';
-        title.style.cssText = 'font-family:sans-serif;font-size:14px;font-weight:bold;color:#333;';
-        modal.appendChild(title);
-
-        const previewCanvas = document.createElement('canvas');
-        const thumbScale = 2;
-        renderPixelsToCanvas(currentPixels, previewCanvas, thumbScale);
-        previewCanvas.style.cssText = 'border:1px solid #ccc;border-radius:4px;image-rendering:pixelated;';
-        modal.appendChild(previewCanvas);
-
-        const btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex;gap:8px;';
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = 'Cancel';
-        cancelBtn.style.cssText = 'padding:6px 16px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;font-size:13px;';
-        cancelBtn.onclick = () => document.body.removeChild(overlay);
-
-        const doneBtn = document.createElement('button');
-        doneBtn.textContent = 'Done';
-        doneBtn.style.cssText = 'padding:6px 16px;border:1px solid #0078d7;border-radius:4px;background:#0078d7;color:#fff;cursor:pointer;font-size:13px;';
-        doneBtn.onclick = () => {
-            try {
-                const encoded = encodeInkyBitImage(currentPixels);
-                const hexLiteral = encodedImageToHexLiteral(encoded);
-                this.setValue(hexLiteral);
-            } catch (e) {
-                pxt.debug('Failed to encode IBIT image: ' + e);
-            }
-            document.body.removeChild(overlay);
-        };
-
-        btnRow.appendChild(cancelBtn);
-        btnRow.appendChild(doneBtn);
-        modal.appendChild(btnRow);
-
-        overlay.appendChild(modal);
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) document.body.removeChild(overlay);
+        const editor = new InkyImageEditor(currentPixels);
+        editor.onDone((hexLiteral: string) => {
+            this.setValue(hexLiteral);
         });
-        document.body.appendChild(overlay);
     }
 }
