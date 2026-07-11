@@ -21,8 +21,10 @@
     "packageManager": "npm@11.18.0",
     "scripts": {
         "build:target": "pxt buildtarget",
+        "test:inkybit-capacity": "node tests/inkybit-capacity/run-capacity.mjs",
         "test:inkybit-codec": "node node_modules/typescript/bin/tsc -p tests/inkybit-codec && node tests/inkybit-codec/codec.test.js",
-        "test:inkybit-integration": "pxt buildtarget && cd tests/inkybit-integration && ../../node_modules/.bin/pxt install && ../../node_modules/.bin/pxt build"
+        "test:inkybit-persistence": "npm run test:inkybit-codec && node tests/inkybit-capacity/run-persistence.mjs",
+        "test:inkybit-integration": "pxt buildtarget && node tests/inkybit-integration/generate-main.mjs && cd tests/inkybit-integration && ../../node_modules/.bin/pxt install && ../../node_modules/.bin/pxt build"
     },
     "files": [
         "README.md",

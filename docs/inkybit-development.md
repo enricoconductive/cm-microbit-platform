@@ -4,7 +4,7 @@ This branch is a self-hosted development target. It does not replace public Make
 
 ## Pinned revisions
 
-The machine-readable pins live in inkybit-toolchain.json. The target starts from Microsoft pxt-microbit commit 4b304c58999bd330bc37b7fb01577e6122760ae3. The integration project loads pxt-inkybit commit 71d9efe75b0fe40ec203e08b430f3fc9f9f7abf5.
+The machine-readable pins live in inkybit-toolchain.json. The target starts from Microsoft pxt-microbit commit 4b304c58999bd330bc37b7fb01577e6122760ae3. The integration project loads pxt-inkybit commit 5a5ad02f06e08eb6fa4c8068c3d0340f7349e28c.
 
 The target package pins pxt-core 13.0.1 and pxt-common-packages 14.0.2. Use Node 22.23.1 and npm 11.18.0. Although the upstream build workflow currently selects Node 20.x, the current Blockly 13.1.1 package declares Node 22 or newer; a clean Node 20 install fails with EBADENGINE.
 

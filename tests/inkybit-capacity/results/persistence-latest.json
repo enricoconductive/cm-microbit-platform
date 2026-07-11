@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-07-11T23:26:10.033Z",
+  "node": "v22.23.1",
+  "note": "Headless codec/project-model timings; browser UI timings remain a separate gate.",
+  "results": [
+    {
+      "imageCount": 1,
+      "loadMs": 3.5399579999999986,
+      "editMs": 1.9500000000000028,
+      "saveReloadMs": 0.41570899999999966
+    },
+    {
+      "imageCount": 2,
+      "loadMs": 1.180958000000004,
+      "editMs": 1.3325420000000037,
+      "saveReloadMs": 0.4344159999999988
+    },
+    {
+      "imageCount": 4,
+      "loadMs": 2.0635420000000053,
+      "editMs": 3.282375000000002,
+      "saveReloadMs": 0.5587499999999963
+    },
+    {
+      "imageCount": 8,
+      "loadMs": 4.672291000000001,
+      "editMs": 7.552916999999994,
+      "saveReloadMs": 1.1745829999999984
+    }
+  ]
+}
