@@ -27,7 +27,9 @@ jobs:
 
       - name: Read the extension pin
         id: pins
-        run: echo "extension=$(node -p \"require('./inkybit-toolchain.json').extension.commit\")" >> "$GITHUB_OUTPUT"
+        run: |
+          extension="$(node -p 'require("./inkybit-toolchain.json").extension.commit')"
+          echo "extension=$extension" >> "$GITHUB_OUTPUT"
 
       - name: Check out the exact extension revision
         uses: actions/checkout@v4
@@ -49,7 +51,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git -C libs/inkybit rev-parse HEAD)" = "${{ steps.pins.outputs.extension }}"
-          git merge-base --is-ancestor "$(node -p \"require('./inkybit-toolchain.json').target.upstreamCommit\")" HEAD
+          git merge-base --is-ancestor "$(node -p 'require("./inkybit-toolchain.json").target.upstreamCommit')" HEAD
 
       - name: Test the pinned extension
         working-directory: libs/inkybit
