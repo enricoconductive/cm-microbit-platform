@@ -1,0 +1,12 @@
+{
+    "headerHex": "494249540101fa007800",
+    "encodedLength": 7510,
+    "pixelCount": 30000,
+    "vectors": [
+        { "name": "all-white", "pattern": "white", "sha256": "97ebe90ba3889ec927f6c6ba4fb3544f1cfe9862fb40aaa057ae7367a343c158" },
+        { "name": "all-black", "pattern": "black", "sha256": "5beacb8dd1598503419d1bdda8b2064f9c2157258de9dd1e061c4bfba78379e6" },
+        { "name": "all-red", "pattern": "red", "sha256": "a9aef26194539ae86db1f884423a5b0c33504c7edbeb1e704b60414bda08ddc6" },
+        { "name": "alternating-colours", "pattern": "alternating", "sha256": "06ef2795be56072276e87b356fdb86d67803b6620007ac3a17a826efabc776f6" },
+        { "name": "corners-and-boundaries", "pattern": "boundaries", "sha256": "c99c92af0e87b9eb25eedadbe99f78627f31e7fe074f6f8cd5c3cc752b830dfa" }
+    ]
+}

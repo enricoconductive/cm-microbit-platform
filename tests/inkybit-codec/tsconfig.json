@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "es2017",
+        "module": "commonjs",
+        "outDir": "../../built/inkybit-codec",
+        "rootDir": "../../fieldeditors",
+        "types": [],
+        "skipLibCheck": true
+    },
+    "include": [
+        "../../fieldeditors/inkyImageCodec.ts"
+    ]
+}

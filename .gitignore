@@ -30,5 +30,4 @@ crowdinstats.csv
 *.log
 .vscode/.BROWSE.VC.DB-shm
 .vscode/.BROWSE.VC.DB-wal
-package-lock.json
 .DS_Store

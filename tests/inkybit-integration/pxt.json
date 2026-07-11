@@ -1,0 +1,12 @@
+{
+    "name": "inkybit-integration-smoke",
+    "description": "Pinned Ticket 01 extension integration fixture",
+    "dependencies": {
+        "core": "file:../../libs/core",
+        "inkybit": "github:enricoconductive/pxt-inkybit#71d9efe75b0fe40ec203e08b430f3fc9f9f7abf5",
+        "microphone": "*"
+    },
+    "files": [
+        "main.ts"
+    ]
+}

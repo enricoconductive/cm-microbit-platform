@@ -1,0 +1,18 @@
+{
+    "schemaVersion": 1,
+    "node": "22.23.1",
+    "npm": "11.18.0",
+    "target": {
+        "repository": "https://github.com/enricoconductive/pxt-microbit.git",
+        "upstream": "https://github.com/microsoft/pxt-microbit.git",
+        "upstreamCommit": "4b304c58999bd330bc37b7fb01577e6122760ae3",
+        "version": "9.1.1",
+        "pxtCore": "13.0.1",
+        "pxtCommonPackages": "14.0.2"
+    },
+    "extension": {
+        "repository": "https://github.com/enricoconductive/pxt-inkybit.git",
+        "upstream": "https://github.com/pimoroni/pxt-inkybit.git",
+        "commit": "71d9efe75b0fe40ec203e08b430f3fc9f9f7abf5"
+    }
+}
