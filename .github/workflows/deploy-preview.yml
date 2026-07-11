@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Check out the exact target revision
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Read the extension pin
         id: pins
