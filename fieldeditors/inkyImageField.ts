@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/pxt-core/localtypings/pxtblockly.d.ts"/>
 /// <reference path="../node_modules/pxt-core/built/pxtsim.d.ts"/>
 
-import { IBIT_WIDTH, IBIT_HEIGHT, IBIT_ENCODED_LENGTH, IBIT_PIXEL_COUNT, decodeInkyBitImage, encodeInkyBitImage, encodedImageToHexLiteral } from "./inkyImageCodec";
+import { IBIT_WIDTH, IBIT_HEIGHT, IBIT_ENCODED_LENGTH, decodeInkyBitImage } from "./inkyImageCodec";
 import { InkyImageEditor } from "./inkyImageEditor";
 
 const pxtblockly = pxt.blocks.requirePxtBlockly();
@@ -59,6 +59,7 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
     private svgGroup_: SVGElement | null = null;
     private thumbImage_: SVGImageElement | null = null;
     private errorBlock = false;
+    private activeEditor: InkyImageEditor | null = null;
 
     constructor(text: string, options: FieldInkyImageOptions, validator?: Function) {
         super(text, options, validator);
@@ -68,7 +69,10 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
         this.render_();
     }
 
-    protected onDispose(): void {}
+    protected onDispose(): void {
+        if (this.activeEditor) this.activeEditor.dispose();
+        this.activeEditor = null;
+    }
 
     protected onValueChanged(newValue: string): string {
         const hex = extractHexFromExpr(newValue);
@@ -101,7 +105,7 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
                 'font-size': '10',
                 'fill': '#999',
             }) as SVGTextElement;
-            textEl.textContent = 'inky:bit image';
+            textEl.textContent = this.errorBlock ? 'invalid inky:bit image' : 'inky:bit image';
             group.appendChild(textEl);
             this.size_ = { width: 100, height: 26 } as any;
         } else {
@@ -147,13 +151,19 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
     }
 
     showEditor_(): void {
-        const currentPixels = this.pixels
-            ? new Uint8Array(this.pixels)
-            : new Uint8Array(IBIT_PIXEL_COUNT).fill(0);
+        // Malformed, indirect and future IBIT expressions are source-preserving.
+        if (this.errorBlock || !this.pixels) return;
+
+        if (this.activeEditor) this.activeEditor.dispose();
+        const currentPixels = new Uint8Array(this.pixels);
 
         const editor = new InkyImageEditor(currentPixels);
+        this.activeEditor = editor;
         editor.onDone((hexLiteral: string) => {
             this.setValue(hexLiteral);
+        });
+        editor.onClosed(() => {
+            if (this.activeEditor === editor) this.activeEditor = null;
         });
     }
 }

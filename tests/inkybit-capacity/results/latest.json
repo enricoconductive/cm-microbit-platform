@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-07-11T23:26:27.203Z",
-  "node": "v22.23.1",
+  "generatedAt": "2026-07-12T09:31:51.927Z",
+  "node": "v24.5.0",
   "targetCommit": "4b304c58999bd330bc37b7fb01577e6122760ae3",
-  "extensionCommit": "5a5ad02f06e08eb6fa4c8068c3d0340f7349e28c",
+  "extensionCommit": "9474207126c4e33b670dac54973d0a803772e3c9",
   "results": [
     {
       "imageCount": 1,
       "sourceBytes": 15141,
       "compileSucceeded": true,
-      "compileMs": 1492,
+      "compileMs": 1441,
       "diagnostic": "",
       "generatedBytes": 17364,
       "compilerSourceBytes": 0,
@@ -19,7 +19,7 @@
       "imageCount": 2,
       "sourceBytes": 30218,
       "compileSucceeded": true,
-      "compileMs": 1308,
+      "compileMs": 1569,
       "diagnostic": "",
       "generatedBytes": 24904,
       "compilerSourceBytes": 0,
@@ -32,7 +32,7 @@
       "imageCount": 4,
       "sourceBytes": 60372,
       "compileSucceeded": true,
-      "compileMs": 1736,
+      "compileMs": 1497,
       "diagnostic": "",
       "generatedBytes": 39988,
       "compilerSourceBytes": 0,
@@ -45,7 +45,7 @@
       "imageCount": 8,
       "sourceBytes": 120680,
       "compileSucceeded": true,
-      "compileMs": 2062,
+      "compileMs": 2027,
       "diagnostic": "",
       "generatedBytes": 70156,
       "compilerSourceBytes": 0,
@@ -58,7 +58,7 @@
       "imageCount": 64,
       "sourceBytes": 965100,
       "compileSucceeded": false,
-      "compileMs": 9282,
+      "compileMs": 7917,
       "diagnostic": "Using target microbit with build engine yotta\n  target: v9.1.1 /Users/enricobertelli/Documents/CM receipts/cm_github/Pimoroni/pxt-microbit\n  pxt-core: v13.0.1 /Users/enricobertelli/Documents/CM receipts/cm_github/Pimoroni/pxt-microbit/node_modules/pxt-core\nbuilding /Users/enricobertelli/Documents/CM receipts/cm_github/Pimoroni/pxt-microbit/tests/inkybit-capacity/.work\nmain.ts(1,1): error TS9283: program too big by 312452 bytes!"
     }
   ]

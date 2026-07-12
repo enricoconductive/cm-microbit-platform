@@ -1,31 +1,31 @@
 {
-  "generatedAt": "2026-07-11T23:26:10.033Z",
-  "node": "v22.23.1",
+  "generatedAt": "2026-07-12T09:29:53.555Z",
+  "node": "v24.5.0",
   "note": "Headless codec/project-model timings; browser UI timings remain a separate gate.",
   "results": [
     {
       "imageCount": 1,
-      "loadMs": 3.5399579999999986,
-      "editMs": 1.9500000000000028,
-      "saveReloadMs": 0.41570899999999966
+      "loadMs": 2.686374999999998,
+      "editMs": 1.2064589999999988,
+      "saveReloadMs": 0.3476249999999972
     },
     {
       "imageCount": 2,
-      "loadMs": 1.180958000000004,
-      "editMs": 1.3325420000000037,
-      "saveReloadMs": 0.4344159999999988
+      "loadMs": 0.8379169999999974,
+      "editMs": 1.3249159999999982,
+      "saveReloadMs": 0.34250000000000114
     },
     {
       "imageCount": 4,
-      "loadMs": 2.0635420000000053,
-      "editMs": 3.282375000000002,
-      "saveReloadMs": 0.5587499999999963
+      "loadMs": 2.1494590000000002,
+      "editMs": 2.6421670000000006,
+      "saveReloadMs": 0.49849999999999994
     },
     {
       "imageCount": 8,
-      "loadMs": 4.672291000000001,
-      "editMs": 7.552916999999994,
-      "saveReloadMs": 1.1745829999999984
+      "loadMs": 3.9894590000000036,
+      "editMs": 5.293166999999997,
+      "saveReloadMs": 0.7646659999999983
     }
   ]
 }

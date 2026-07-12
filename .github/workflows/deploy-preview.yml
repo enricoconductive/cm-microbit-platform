@@ -69,6 +69,7 @@ jobs:
       - name: Test target codec and pinned integration
         run: |
           npm run test:inkybit-codec
+          npm run test:inkybit-editor
           npm run test:inkybit-integration
 
       - name: Build labelled static package with the pinned consumer

@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "es2017",
+        "module": "commonjs",
+        "outDir": "../../built/inkybit-editor",
+        "rootDir": "../../fieldeditors",
+        "types": [],
+        "skipLibCheck": true
+    },
+    "include": [
+        "../../fieldeditors/inkyBitFont.ts",
+        "../../fieldeditors/inkyImageEditorGeometry.ts"
+    ]
+}

@@ -2,15 +2,18 @@
  * Inky:Bit 250×120 pixel image editor for MakeCode.
  *
  * Self-contained HTML overlay that manages its own DOM, event listeners,
- * and state.  When Done/Cancel is chosen the overlay is torn down and the
- * field's setValue() callback is invoked.
+ * and state. Done commits through the field callback; Cancel only tears down
+ * the overlay and listeners.
  */
 
 import {
     IBIT_WIDTH, IBIT_HEIGHT, IBIT_PIXEL_COUNT,
     encodeInkyBitImage, encodedImageToHexLiteral,
 } from "./inkyImageCodec";
-import { FONT_DATA, FONT_START, FONT_END } from "./inkyBitFont";
+import {
+    clampInkyViewport, fitInkyViewport, getInkyCharBitmap,
+    getInkyCharWidth, layoutInkyText,
+} from "./inkyImageEditorGeometry";
 
 // ── colour helpers ───────────────────────────────────────────────────
 const COLOUR_MAP: Record<number, string> = {
@@ -66,37 +69,13 @@ function midpointEllipse(
 }
 
 // ── font helpers ─────────────────────────────────────────────────────
-function getCharBitmap(ch: string): number[] | null {
-    const code = ch.charCodeAt(0);
-    if (code < FONT_START || code > FONT_END) return null;
-    const idx = (code - FONT_START) * 5;
-    return FONT_DATA.slice(idx, idx + 5);
-}
-
-/** Returns the advance width (1–5) of a character. */
-function charWidth(ch: string): number {
-    const bmp = getCharBitmap(ch);
-    if (!bmp) return 5;
-    // Check from right: column 5 (bit 0), 4 (bit 1), 3 (bit 2)...
-    let w = 5;
-    while (w > 1) {
-        let used = false;
-        for (const row of bmp) {
-            if (row & (1 << (5 - w))) { used = true; break; }
-        }
-        if (used) break;
-        w--;
-    }
-    return w;
-}
-
 function rasteriseChar(
     pixels: Uint8Array, ch: string, x: number, y: number,
     scale: number, colour: number,
 ) {
-    const bmp = getCharBitmap(ch);
+    const bmp = getInkyCharBitmap(ch);
     if (!bmp) return 0;
-    const w = charWidth(ch);
+    const w = getInkyCharWidth(ch);
     for (let row = 0; row < 5; row++) {
         for (let col = 0; col < 5; col++) {
             if (bmp[row] & (0x10 >> col)) {
@@ -119,13 +98,13 @@ function rasteriseChar(
 export class InkyImageEditor {
     private overlay!: HTMLDivElement;
     private canvasEl!: HTMLCanvasElement;
+    private canvasWrap!: HTMLDivElement;
     private ctx!: CanvasRenderingContext2D;
     private thumbCanvas!: HTMLCanvasElement;
     private thumbCtx!: CanvasRenderingContext2D;
 
     // pixel data
     private pixels!: Uint8Array;
-    private originalPixels: Uint8Array | null = null;
 
     // state
     private tool: Tool = "pencil";
@@ -181,10 +160,10 @@ export class InkyImageEditor {
     // cleanup
     private boundHandlers: Array<[string, EventListenerOrEventListenerObject, EventTarget]> = [];
     private animFrameId = 0;
+    private disposed = false;
 
     constructor(initialPixels: Uint8Array) {
         this.pixels = new Uint8Array(initialPixels);
-        this.originalPixels = new Uint8Array(initialPixels);
         this.buildDOM();
         this.fitToView();
         this.render();
@@ -299,6 +278,7 @@ export class InkyImageEditor {
         const canvasWrap = this.el("div",
             "flex:1;overflow:hidden;position:relative;background:#e8e8e8;cursor:crosshair;");
         canvasWrap.id = "ib-canvas-wrap";
+        this.canvasWrap = canvasWrap;
 
         this.canvasEl = this.el("canvas", "") as HTMLCanvasElement;
         this.canvasEl.style.cssText = "image-rendering:pixelated;display:block;";
@@ -660,11 +640,14 @@ export class InkyImageEditor {
         document.addEventListener("keyup", onKeyUp);
     }
 
-    private cleanup() {
+    public dispose() {
+        if (this.disposed) return;
+        this.disposed = true;
         for (const [evt, fn, target] of this.boundHandlers) target.removeEventListener(evt, fn);
         this.boundHandlers = [];
         if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
         if (this.overlay.parentNode) this.overlay.parentNode.removeChild(this.overlay);
+        this._onClosed();
     }
 
     // ── Coordinate transforms ────────────────────────────────────────
@@ -761,8 +744,14 @@ export class InkyImageEditor {
     // ── Rendering ────────────────────────────────────────────────────
     private render() {
         const z = this.zoom;
-        const cw = Math.ceil(IBIT_WIDTH * z);
-        const ch = Math.ceil(IBIT_HEIGHT * z);
+        const cw = Math.max(1, this.canvasWrap.clientWidth);
+        const ch = Math.max(1, this.canvasWrap.clientHeight);
+
+        const transform = clampInkyViewport(cw, ch, IBIT_WIDTH, IBIT_HEIGHT, {
+            zoom: this.zoom, panX: this.panX, panY: this.panY,
+        });
+        this.panX = transform.panX;
+        this.panY = transform.panY;
 
         if (this.canvasEl.width !== cw || this.canvasEl.height !== ch) {
             this.canvasEl.width = cw;
@@ -815,19 +804,19 @@ export class InkyImageEditor {
         // text preview
         if (this.tool === "text" && this.textContent) {
             ctx.globalAlpha = 0.5;
-            let tx = this.textCursorX;
-            for (const ch of this.textContent) {
-                const bmp = getCharBitmap(ch);
-                if (!bmp) { tx += 6 * this.textSize; continue; }
+            for (const placement of layoutInkyText(
+                this.textContent, this.textCursorX, this.textCursorY, this.textSize, IBIT_WIDTH,
+            )) {
+                const bmp = getInkyCharBitmap(placement.ch);
+                if (!bmp) continue;
                 for (let row = 0; row < 5; row++) {
                     for (let col = 0; col < 5; col++) {
                         if (bmp[row] & (0x10 >> col)) {
                             ctx.fillStyle = COLOUR_MAP[this.colour] || "#000";
-                            ctx.fillRect(tx + col * this.textSize, this.textCursorY + row * this.textSize, this.textSize, this.textSize);
+                            ctx.fillRect(placement.x + col * this.textSize, placement.y + row * this.textSize, this.textSize, this.textSize);
                         }
                     }
                 }
-                tx += charWidth(ch) * this.textSize;
             }
             ctx.globalAlpha = 1;
         }
@@ -856,23 +845,20 @@ export class InkyImageEditor {
 
     // ── Zoom helpers ─────────────────────────────────────────────────
     private fitToView() {
-        const wrap = document.getElementById("ib-canvas-wrap");
-        if (!wrap) return;
-        const w = wrap.clientWidth - 4;
-        const h = wrap.clientHeight - 4;
-        this.zoom = Math.min(w / IBIT_WIDTH, h / IBIT_HEIGHT);
-        this.panX = Math.max(0, (w - IBIT_WIDTH * this.zoom) / 2);
-        this.panY = Math.max(0, (h - IBIT_HEIGHT * this.zoom) / 2);
+        const w = this.canvasWrap.clientWidth;
+        const h = this.canvasWrap.clientHeight;
+        const transform = fitInkyViewport(w, h, IBIT_WIDTH, IBIT_HEIGHT);
+        this.zoom = transform.zoom;
+        this.panX = transform.panX;
+        this.panY = transform.panY;
         this.render();
         this.updateZoomLabel();
         this.updateVPIndicator();
     }
 
     private zoomBy(factor: number) {
-        const wrap = document.getElementById("ib-canvas-wrap");
-        if (!wrap) return;
-        const w = wrap.clientWidth;
-        const h = wrap.clientHeight;
+        const w = this.canvasWrap.clientWidth;
+        const h = this.canvasWrap.clientHeight;
         const cx = w / 2, cy = h / 2;
         const oldZoom = this.zoom;
         this.zoom = Math.max(0.5, Math.min(20, this.zoom * factor));
@@ -906,8 +892,7 @@ export class InkyImageEditor {
         this.circleToggleWrap.style.display = t === "circle" ? "flex" : "none";
         this.textPanel.style.display = t === "text" ? "block" : "none";
 
-        const canvasWrap = document.getElementById("ib-canvas-wrap");
-        if (canvasWrap) canvasWrap.style.cursor = t === "pan" || this.spaceHeld ? "grab" : "crosshair";
+        this.canvasWrap.style.cursor = t === "pan" || this.spaceHeld ? "grab" : "crosshair";
         this.render();
     }
 
@@ -989,16 +974,10 @@ export class InkyImageEditor {
         const txt = this.textContent;
         if (!txt) return;
         this.pushUndo();
-        let tx = this.textCursorX;
-        const startX = tx;
-        for (const ch of txt) {
-            const w = charWidth(ch);
-            if (tx + w * this.textSize >= IBIT_WIDTH) {
-                this.textCursorY += 6 * this.textSize;
-                tx = startX;
-            }
-            rasteriseChar(this.pixels, ch, tx, this.textCursorY, this.textSize, this.colour);
-            tx += w * this.textSize;
+        for (const placement of layoutInkyText(
+            txt, this.textCursorX, this.textCursorY, this.textSize, IBIT_WIDTH,
+        )) {
+            rasteriseChar(this.pixels, placement.ch, placement.x, placement.y, this.textSize, this.colour);
         }
         this.commitChange();
         this.render();
@@ -1013,7 +992,7 @@ export class InkyImageEditor {
         } catch (e) {
             pxt.debug("Failed to encode IBIT image: " + e);
         }
-        this.cleanup();
+        this.dispose();
     }
 
     private cancel() {
@@ -1021,18 +1000,13 @@ export class InkyImageEditor {
             const yes = confirm("Discard changes?");
             if (!yes) return;
         }
-        if (this.originalPixels) {
-            try {
-                const encoded = encodeInkyBitImage(this.originalPixels);
-                const hexLiteral = encodedImageToHexLiteral(encoded);
-                this._onDone(hexLiteral);
-            } catch { /* keep original */ }
-        }
-        this.cleanup();
+        this.dispose();
     }
 
     // ── Callbacks (set externally) ───────────────────────────────────
     private _onDone: (hexLiteral: string) => void = () => {};
+    private _onClosed: () => void = () => {};
 
     public onDone(cb: (hexLiteral: string) => void) { this._onDone = cb; }
+    public onClosed(cb: () => void) { this._onClosed = cb; }
 }
