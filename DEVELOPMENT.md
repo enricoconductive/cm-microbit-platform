@@ -57,6 +57,11 @@ Repository Settings -> Pages must use **GitHub Actions** before the deploy job c
 publish. Until a successful Pages environment deployment exists, no public URL
 should be claimed.
 
+The feature-branch deployment is live at
+`https://enricoconductive.github.io/pxt-microbit/`. Its adjacent
+`inkybit-preview-manifest.json` is the source of truth for the revisions behind
+the currently published preview.
+
 ## Browser journey and boundary
 
 The automated browser smoke proves that the labelled editor boots, the exact
