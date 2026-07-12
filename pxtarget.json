@@ -20,7 +20,8 @@
         "libs/bitmap",
         "libs/fonts",
         "libs/color",
-        "libs/audio-recording"
+        "libs/audio-recording",
+        "libs/inkybit"
     ],
     "cloud": {
         "workspace": false,
@@ -183,7 +184,7 @@
         "mbdal",
         "mbcodal"
     ],
-    "alwaysMultiVariant" : true,
+    "alwaysMultiVariant": true,
     "variants": {
         "mbdal": {
             "compile": {},
@@ -346,12 +347,10 @@
                 "bluetooth",
                 "thermometer",
                 "compass",
-
                 "builtinspeaker",
                 "microphone",
                 "logotouch",
                 "flashlog",
-
                 "v2"
             ],
             "pinStyles": {
@@ -400,8 +399,6 @@
         "appLogo": "./static/cm-logo.png",
         "organization": "Conductive Music",
         "organizationUrl": "https://conductivemusic.uk/",
-        "organizationLogo": "./static/cm-logo.png",
-        "organizationWideLogo": "./static/cm-logo.png",
         "homeScreenHero": {
             "imageUrl": "/static/herogallery/hero-banner.png",
             "name": "Flashing Heart",
@@ -582,16 +579,17 @@
         "immersiveReader": true,
         "tutorialCodeValidation": true,
         "downloadDialogTheme": {
-            "webUSBDeviceNames": ["BBC micro:bit CMSIS-DAP", "DAPLink CMSIS-DAP"],
+            "webUSBDeviceNames": [
+                "BBC micro:bit CMSIS-DAP",
+                "DAPLink CMSIS-DAP"
+            ],
             "minimumFirmwareVersion": "0249",
             "deviceIcon": "xicon microbit",
             "deviceSuccessIcon": "xicon microbit-check",
-
-            "downloadMenuHelpURL" : "/device/usb",
-            "downloadHelpURL" : "/device/usb",
+            "downloadMenuHelpURL": "/device/usb",
+            "downloadHelpURL": "/device/usb",
             "troubleshootWebUSBHelpURL": "/device/usb/webusb/troubleshoot",
             "incompatibleHardwareHelpURL": "/device/v2",
-
             "dragFileImage": "/static/download/transfer.png",
             "connectDeviceImage": "/static/download/connect-microbit.gif",
             "disconnectDeviceImage": "/static/download/full-reset.gif",

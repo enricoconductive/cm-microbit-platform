@@ -161,6 +161,9 @@ export class InkyImageEditor {
     private boundHandlers: Array<[string, EventListenerOrEventListenerObject, EventTarget]> = [];
     private animFrameId = 0;
     private disposed = false;
+    private themeStyle: HTMLStyleElement | null = null;
+    private layoutObserver: ResizeObserver | null = null;
+    private appHeader: Element | null = null;
 
     constructor(initialPixels: Uint8Array) {
         this.pixels = new Uint8Array(initialPixels);
@@ -189,16 +192,20 @@ export class InkyImageEditor {
     }
 
     private buildDOM() {
+        this.installThemeStyles();
         const ov = this.el("div",
-            "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:13px;color:#222;");
+            "position:fixed;left:0;right:0;bottom:0;z-index:49;display:flex;font-size:13px;");
+        ov.id = "ib-editor-workspace";
         this.overlay = ov;
 
         const modal = this.el("div",
-            "background:#fff;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;max-width:98vw;max-height:96vh;");
+            "display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden;");
+        modal.className = "ib-editor-shell";
 
         // ── top bar ──────────────────────────────────────────────────
         const topBar = this.el("div",
             "display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f7f7f7;border-bottom:1px solid #ddd;flex-wrap:wrap;");
+        topBar.className = "ib-topbar";
 
         const title = this.el("span", "font-weight:600;margin-right:auto;");
         title.textContent = "Inky:Bit Image – 250×120";
@@ -221,7 +228,7 @@ export class InkyImageEditor {
         // size buttons
         for (const sz of [1, 3, 5]) {
             const b = this.btn(String(sz),
-                `padding:3px 8px;border:1px solid #bbb;border-radius:4px;cursor:pointer;font-size:12px;${sz === this.brushSize ? "background:#0078d7;color:#fff;border-color:#0078d7;" : "background:#fff;"}`,
+                `padding:3px 8px;border:1px solid #bbb;border-radius:4px;cursor:pointer;font-size:12px;${sz === this.brushSize ? "background:var(--pxt-primary-background, #00A651);color:var(--pxt-primary-foreground, #fff);border-color:var(--pxt-primary-background, #00A651);" : "background:#fff;"}`,
                 () => this.setBrushSize(sz));
             b.className = "ib-size-btn";
             b.dataset.size = String(sz);
@@ -241,7 +248,7 @@ export class InkyImageEditor {
         topBar.appendChild(cancelBtn);
 
         const doneBtn = this.btn("Done",
-            "padding:4px 14px;border:1px solid #0078d7;border-radius:4px;background:#0078d7;color:#fff;cursor:pointer;font-size:12px;font-weight:600;",
+            "padding:4px 14px;border:1px solid var(--pxt-primary-background, #00A651);border-radius:4px;background:var(--pxt-primary-background, #00A651);color:var(--pxt-primary-foreground, #fff);cursor:pointer;font-size:12px;font-weight:600;",
             () => this.done());
         topBar.appendChild(doneBtn);
 
@@ -249,10 +256,12 @@ export class InkyImageEditor {
 
         // ── middle: left-rail | canvas | right panel ─────────────────
         const middle = this.el("div", "display:flex;flex:1;min-height:0;");
+        middle.className = "ib-middle";
 
         // left rail
         const rail = this.el("div",
             "display:flex;flex-direction:column;gap:2px;padding:6px 4px;background:#f0f0f0;border-right:1px solid #ddd;width:36px;align-items:center;flex-shrink:0;");
+        rail.className = "ib-tool-rail";
         const toolDefs: [Tool, string][] = [
             ["pencil", "✏"], ["eraser", "⌫"], ["line", "╱"],
             ["rect", "▭"], ["circle", "○"], ["text", "T"],
@@ -260,7 +269,7 @@ export class InkyImageEditor {
         ];
         for (const [id, icon] of toolDefs) {
             const b = this.btn(icon,
-                `width:28px;height:28px;border:1px solid #bbb;border-radius:4px;cursor:pointer;font-size:14px;line-height:1;text-align:center;padding:0;${id === this.tool ? "background:#0078d7;color:#fff;border-color:#0078d7;" : "background:#fff;"}`,
+                `width:28px;height:28px;border:1px solid #bbb;border-radius:4px;cursor:pointer;font-size:14px;line-height:1;text-align:center;padding:0;${id === this.tool ? "background:var(--pxt-primary-background, #00A651);color:var(--pxt-primary-foreground, #fff);border-color:var(--pxt-primary-background, #00A651);" : "background:#fff;"}`,
                 () => this.setTool(id));
             b.className = "ib-tool-btn";
             b.dataset.tool = id;
@@ -291,6 +300,7 @@ export class InkyImageEditor {
         // right panel
         const rightPanel = this.el("div",
             "width:200px;border-left:1px solid #ddd;background:#f7f7f7;padding:8px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;overflow-y:auto;");
+        rightPanel.className = "ib-inspector";
 
         // colour palette
         const palLabel = this.el("div", "font-weight:600;font-size:11px;text-transform:uppercase;color:#666;");
@@ -350,6 +360,7 @@ export class InkyImageEditor {
         // ── bottom bar ───────────────────────────────────────────────
         const bottomBar = this.el("div",
             "display:flex;align-items:center;gap:8px;padding:4px 12px;background:#f7f7f7;border-top:1px solid #ddd;font-size:11px;");
+        bottomBar.className = "ib-bottombar";
 
         this.coordLabel = this.el("span", "min-width:100px;");
         this.coordLabel.textContent = "x: —  y: —";
@@ -379,16 +390,65 @@ export class InkyImageEditor {
 
         ov.appendChild(modal);
 
-        // click-through on overlay background → close
-        ov.addEventListener("click", (e) => {
-            if (e.target === ov) this.cancel();
-        });
-
+        this.appHeader = this.findApplicationHeader();
         document.body.appendChild(ov);
+        this.observeWorkspace();
 
         // attach pointer events to canvasWrap
         this.attachPointerHandlers(canvasWrap);
         this.updateVPIndicator();
+    }
+
+    private installThemeStyles() {
+        const style = document.createElement("style");
+        style.id = "ib-editor-theme";
+        style.textContent = `
+            #ib-editor-workspace { background:var(--pxt-target-background1, #f3f3f3); color:var(--pxt-target-foreground1, #202124); font-family:var(--body-font-family, system-ui, sans-serif); }
+            #ib-editor-workspace .ib-editor-shell { background:var(--pxt-target-background1, #fff); }
+            #ib-editor-workspace .ib-topbar, #ib-editor-workspace .ib-bottombar, #ib-editor-workspace .ib-inspector { background:var(--pxt-target-background2, #f7f7f7) !important; color:var(--pxt-target-foreground2, #202124); border-color:var(--pxt-target-stencil2, #d0d0d0) !important; }
+            #ib-editor-workspace .ib-tool-rail { background:var(--pxt-target-background2, #f0f0f0) !important; border-color:var(--pxt-target-stencil2, #d0d0d0) !important; }
+            #ib-editor-workspace #ib-canvas-wrap { background:var(--pxt-neutral-alpha10, #e8e8e8) !important; }
+            #ib-editor-workspace button, #ib-editor-workspace input, #ib-editor-workspace select { font:inherit; color:inherit; border-color:var(--pxt-target-stencil2, #bbb) !important; background:var(--pxt-target-background1, #fff); }
+            #ib-editor-workspace button:focus-visible, #ib-editor-workspace input:focus-visible, #ib-editor-workspace select:focus-visible { outline:3px solid var(--pxt-focus-border, #00A651); outline-offset:2px; }
+            #ib-editor-workspace .ib-tool-btn[style*="rgb(0, 120, 215)"], #ib-editor-workspace .ib-size-btn[style*="rgb(0, 120, 215)"] { background:var(--pxt-primary-background, #00A651) !important; border-color:var(--pxt-primary-background, #00A651) !important; color:var(--pxt-primary-foreground, #fff) !important; }
+            #ib-editor-workspace .ib-topbar button:last-child, #ib-editor-workspace .ib-editor-shell button[style*="background: rgb(0, 120, 215)"] { background:var(--pxt-primary-background, #00A651) !important; border-color:var(--pxt-primary-background, #00A651) !important; color:var(--pxt-primary-foreground, #fff) !important; }
+            @media (max-width: 760px) {
+                #ib-editor-workspace .ib-middle { flex-direction:column; }
+                #ib-editor-workspace .ib-tool-rail { width:100% !important; flex-direction:row; min-height:42px; overflow-x:auto; }
+                #ib-editor-workspace .ib-inspector { width:100% !important; max-height:148px; flex-direction:row; flex-wrap:wrap; overflow-y:auto; border-left:0 !important; border-top:1px solid var(--pxt-target-stencil2, #d0d0d0); }
+                #ib-editor-workspace .ib-inspector canvas { width:92px !important; height:44px !important; }
+            }
+        `;
+        document.head.appendChild(style);
+        this.themeStyle = style;
+    }
+
+    private observeWorkspace() {
+        const update = () => {
+            const header = this.appHeader?.isConnected ? this.appHeader : this.findApplicationHeader();
+            const top = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+            this.overlay.style.top = `${top}px`;
+            this.fitToView();
+        };
+        this.layoutObserver = new ResizeObserver(update);
+        const header = this.appHeader?.isConnected ? this.appHeader : this.findApplicationHeader();
+        if (header) this.layoutObserver.observe(header);
+        this.layoutObserver.observe(this.overlay);
+        this.boundHandlers.push(["resize", update, window]);
+        window.addEventListener("resize", update);
+        update();
+    }
+
+    private findApplicationHeader(): Element | null {
+        const named = document.querySelector("#root > .menubar, .menubar, header, [role='banner']");
+        if (named && named.getBoundingClientRect().height > 0) return named;
+        let candidate: Element | null = document.elementFromPoint(window.innerWidth / 2, 10);
+        while (candidate && candidate !== document.body) {
+            const rect = candidate.getBoundingClientRect();
+            if (rect.top <= 1 && rect.width >= window.innerWidth * 0.8 && rect.height >= 32 && rect.height <= 160) return candidate;
+            candidate = candidate.parentElement;
+        }
+        return null;
     }
 
     private buildFillToggle(type: "rect" | "circle"): HTMLDivElement {
@@ -398,7 +458,7 @@ export class InkyImageEditor {
         wrap.appendChild(label);
         for (const mode of ["outline", "filled"]) {
             const b = this.btn(mode === "outline" ? "▢" : "■",
-                `width:28px;height:24px;border:1px solid #bbb;border-radius:3px;cursor:pointer;font-size:12px;line-height:1;padding:0;${(type === "rect" ? this.rectFilled : this.circleFilled) === (mode === "filled") ? "background:#0078d7;color:#fff;border-color:#0078d7;" : "background:#fff;"}`,
+                `width:28px;height:24px;border:1px solid #bbb;border-radius:3px;cursor:pointer;font-size:12px;line-height:1;padding:0;${(type === "rect" ? this.rectFilled : this.circleFilled) === (mode === "filled") ? "background:var(--pxt-primary-background, #00A651);color:var(--pxt-primary-foreground, #fff);border-color:var(--pxt-primary-background, #00A651);" : "background:#fff;"}`,
                 () => {
                     if (type === "rect") this.rectFilled = mode === "filled";
                     else this.circleFilled = mode === "filled";
@@ -646,6 +706,10 @@ export class InkyImageEditor {
         for (const [evt, fn, target] of this.boundHandlers) target.removeEventListener(evt, fn);
         this.boundHandlers = [];
         if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+        this.layoutObserver?.disconnect();
+        this.layoutObserver = null;
+        this.themeStyle?.remove();
+        this.themeStyle = null;
         if (this.overlay.parentNode) this.overlay.parentNode.removeChild(this.overlay);
         this._onClosed();
     }
@@ -884,9 +948,9 @@ export class InkyImageEditor {
         this.tool = t;
         for (const btn of Array.from(document.querySelectorAll(".ib-tool-btn")) as HTMLButtonElement[]) {
             const active = btn.dataset.tool === t;
-            btn.style.background = active ? "#0078d7" : "#fff";
-            btn.style.color = active ? "#fff" : "";
-            btn.style.borderColor = active ? "#0078d7" : "#bbb";
+            btn.style.background = active ? "var(--pxt-primary-background, #00A651)" : "#fff";
+            btn.style.color = active ? "var(--pxt-primary-foreground, #fff)" : "";
+            btn.style.borderColor = active ? "var(--pxt-primary-background, #00A651)" : "#bbb";
         }
         this.rectToggleWrap.style.display = t === "rect" ? "flex" : "none";
         this.circleToggleWrap.style.display = t === "circle" ? "flex" : "none";
@@ -899,7 +963,7 @@ export class InkyImageEditor {
     private setColour(c: number) {
         this.colour = c;
         for (const btn of Array.from(document.querySelectorAll(".ib-colour-btn")) as HTMLButtonElement[]) {
-            btn.style.borderColor = Number(btn.dataset.colour) === c ? "#0078d7" : "#bbb";
+            btn.style.borderColor = Number(btn.dataset.colour) === c ? "var(--pxt-primary-background, #00A651)" : "#bbb";
             btn.style.borderWidth = Number(btn.dataset.colour) === c ? "2px" : "2px";
         }
     }
@@ -908,9 +972,9 @@ export class InkyImageEditor {
         this.brushSize = s;
         for (const btn of Array.from(document.querySelectorAll(".ib-size-btn")) as HTMLButtonElement[]) {
             const active = Number(btn.dataset.size) === s;
-            btn.style.background = active ? "#0078d7" : "#fff";
-            btn.style.color = active ? "#fff" : "";
-            btn.style.borderColor = active ? "#0078d7" : "#bbb";
+            btn.style.background = active ? "var(--pxt-primary-background, #00A651)" : "#fff";
+            btn.style.color = active ? "var(--pxt-primary-foreground, #fff)" : "";
+            btn.style.borderColor = active ? "var(--pxt-primary-background, #00A651)" : "#bbb";
         }
     }
 

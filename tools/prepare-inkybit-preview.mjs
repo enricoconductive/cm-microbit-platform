@@ -25,17 +25,16 @@ writeFileSync(extensionConfigPath, JSON.stringify(extensionConfig, null, 4) + "\
 
 const relativeExtension = "libs/inkybit";
 const basePackages = [...target.bundleddirs];
-assert(!basePackages.includes(relativeExtension), "preview package is already configured");
-target.bundleddirs.push(relativeExtension);
+assert(basePackages.includes(relativeExtension), "Inky:Bit must be bundled in the platform");
 target.staticpkgdirs = {
-    base: basePackages,
+    base: basePackages.filter(pkg => pkg !== relativeExtension),
     extensions: [relativeExtension]
 };
 target.name = "Conductive Music MakeCode";
 target.title = "Conductive Music MakeCode for micro:bit";
 target.description = "A Blocks / JavaScript code editor for the micro:bit powered by Conductive Music.";
 target.appTheme.organization = "Conductive Music";
-target.appTheme.homeUrl = "./";
+target.appTheme.homeUrl = "https://conductivemusic.uk/";
 target.appTheme.embedUrl = "./";
 target.appTheme.shareUrl = "./";
 

@@ -44,6 +44,19 @@ try {
     await page.waitForSelector(".newprojectcard", { visible: true, timeout: 30000 });
     assert.equal(await page.title(), "Conductive Music MakeCode for micro:bit");
     assert.match(await page.$eval("#inkybit-development-preview", el => el.textContent), /Conductive Music MakeCode/i);
+    const headerBrand = await page.evaluate(() => {
+        const logo = document.querySelector(".header-logo img, .ui.item.logo.brand img");
+        return {
+            count: document.querySelectorAll(".header-logo img, .ui.item.logo.brand img").length,
+            organizationLogoCount: document.querySelectorAll(".header-org-logo img").length,
+            height: logo ? getComputedStyle(logo).height : undefined,
+            homeUrl: window.pxt?.appTarget?.appTheme?.homeUrl
+        };
+    });
+    assert.equal(headerBrand.count, 1, "header must contain one CM logo");
+    assert.equal(headerBrand.organizationLogoCount, 0, "header must not render a second organisation logo");
+    assert.equal(headerBrand.homeUrl, "https://conductivemusic.uk/", "Home must link to Conductive Music");
+    assert(Math.abs(parseFloat(headerBrand.height) - 38.4) < 0.01, "header logo must use the larger brand size");
 
     const bundle = await page.evaluate(() => {
         const pkg = window.pxt?.appTarget?.bundledpkgs?.inkybit;
@@ -60,19 +73,10 @@ try {
     await page.waitForSelector("#projectNameInput", { visible: true });
     await page.type("#projectNameInput", "InkyBit preview smoke");
     await page.click('button[aria-label="Create"]');
-    await page.waitForSelector('#blocks-addpackage\\.label', { visible: true, timeout: 30000 });
     await new Promise(resolveReady => setTimeout(resolveReady, 8000));
     const tourClose = await page.$("button.teaching-bubble-close");
     if (tourClose) await tourClose.click();
 
-    await page.click('#blocks-addpackage\\.label');
-    await page.waitForFunction(() => [...document.querySelectorAll(".common-extension-card-title")]
-        .some(el => el.textContent.trim() === "inkybit"), { timeout: 30000 });
-    await page.evaluate(() => {
-        const title = [...document.querySelectorAll(".common-extension-card-title")]
-            .find(el => el.textContent.trim() === "inkybit");
-        title.parentElement.parentElement.querySelector("button").click();
-    });
     await page.waitForFunction(() => [...document.querySelectorAll(".blocklyTreeLabel")]
         .some(el => el.textContent.trim() === "Inky:Bit"), { timeout: 30000 });
     await page.evaluate(() => [...document.querySelectorAll(".blocklyTreeLabel")]
@@ -119,6 +123,42 @@ try {
     await page.mouse.click(fieldPoint.x, fieldPoint.y);
     await page.waitForFunction(() => [...document.querySelectorAll("button")]
         .some(el => el.offsetParent && el.textContent.trim() === "Done"), { timeout: 10000 });
+    const workspace = await page.evaluate(() => {
+        const root = document.querySelector("#ib-editor-workspace");
+        const namedHeader = document.querySelector("#root > .menubar, .menubar, header, [role='banner']");
+        let header = namedHeader;
+        if (!header || header.getBoundingClientRect().height === 0) {
+            let candidate = document.elementFromPoint(window.innerWidth / 2, 10);
+            while (candidate && candidate !== document.body) {
+                const rect = candidate.getBoundingClientRect();
+                if (rect.top <= 1 && rect.width >= window.innerWidth * 0.8 && rect.height >= 32 && rect.height <= 160) {
+                    header = candidate;
+                    break;
+                }
+                candidate = candidate.parentElement;
+            }
+        }
+        const shell = root?.querySelector(".ib-editor-shell");
+        const canvas = root?.querySelector("#ib-canvas-wrap");
+        const rootRect = root?.getBoundingClientRect();
+        const headerRect = header?.getBoundingClientRect();
+        return {
+            rootTop: rootRect?.top,
+            rootHeight: rootRect?.height,
+            headerBottom: headerRect?.bottom,
+            shellWidth: shell?.getBoundingClientRect().width,
+            viewportWidth: window.innerWidth,
+            font: root ? getComputedStyle(root).fontFamily : "",
+            background: root ? getComputedStyle(root).backgroundColor : "",
+            canvasHeight: canvas?.getBoundingClientRect().height
+        };
+    });
+    assert(workspace.headerBottom > 0, "MakeCode header was not found while editing");
+    assert(Math.abs(workspace.rootTop - workspace.headerBottom) < 2, "editor did not start below the MakeCode header");
+    assert(workspace.rootHeight > 500 && workspace.canvasHeight > 300, "editor did not occupy the workspace");
+    assert(Math.abs(workspace.shellWidth - workspace.viewportWidth) < 2, "editor retained modal-width geometry");
+    assert(!/rgba\(0,\s*0,\s*0,\s*0\.55\)/.test(workspace.background), "legacy dimmed modal backdrop remains");
+    assert(workspace.font.length > 0, "editor did not inherit a platform font");
 
     const canvasRect = await page.$eval("#ib-canvas-wrap canvas", el => el.getBoundingClientRect().toJSON());
     assert(canvasRect, "image editor canvas did not open");
@@ -143,6 +183,16 @@ try {
     });
     assert(centrePixel[0] < 32 && centrePixel[1] < 32 && centrePixel[2] < 32,
         "edited pixel was not committed by Done");
+    await page.setViewport({ width: 640, height: 900 });
+    await new Promise(resolveResize => setTimeout(resolveResize, 250));
+    const compactLayout = await page.evaluate(() => {
+        const workspace = document.querySelector("#ib-editor-workspace");
+        const inspector = workspace?.querySelector(".ib-inspector")?.getBoundingClientRect();
+        const canvas = workspace?.querySelector("#ib-canvas-wrap")?.getBoundingClientRect();
+        return { inspectorWidth: inspector?.width, canvasHeight: canvas?.height };
+    });
+    assert(compactLayout.inspectorWidth > 500 && compactLayout.canvasHeight > 200,
+        "compact layout did not retain a primary canvas and reachable inspector");
     await page.evaluate(() => [...document.querySelectorAll("button")]
         .find(el => el.offsetParent && el.textContent.trim() === "Cancel").click());
     console.log(`browser smoke: exact ${pins.extension.commit} consumer selected, image block edited, and Done committed`);

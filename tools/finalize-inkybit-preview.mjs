@@ -9,20 +9,29 @@ const pins = JSON.parse(readFileSync(resolve(root, "inkybit-toolchain.json"), "u
 const indexPath = resolve(output, "index.html");
 let index = readFileSync(indexPath, "utf8");
 assert(index.includes("</body>"), "static package index has no body element");
+index = index
+    .replace(/<div id="inkybit-development-preview"[\s\S]*?<\/div>/g, "")
+    .replace(/<script src="\/pxt-microbit\/cm-branding\.js"><\/script>/g, "")
+    .replace(/<script src="\/pxt-microbit\/cm-share\.js"><\/script>/g, "");
 
 // Copy CM share page and custom share script to the output
 const shareSrc = resolve(root, "docs/static/share.html");
 const shareScriptSrc = resolve(root, "docs/static/cm-share.js");
+const brandingScriptSrc = resolve(root, "docs/static/cm-branding.js");
 if (existsSync(shareSrc)) {
     copyFileSync(shareSrc, resolve(output, "share.html"));
 }
 if (existsSync(shareScriptSrc)) {
     copyFileSync(shareScriptSrc, resolve(output, "cm-share.js"));
 }
+if (existsSync(brandingScriptSrc)) {
+    copyFileSync(brandingScriptSrc, resolve(output, "cm-branding.js"));
+}
 
 const banner = `<div id="inkybit-development-preview" role="status" style="position:fixed;z-index:2147483647;left:0;right:0;bottom:0;padding:8px 12px;background:#00A651;color:white;font:700 14px sans-serif;text-align:center;box-shadow:0 -2px 5px #0006">Conductive Music MakeCode - Inky:Bit Image Editor</div>`;
 const shareScript = `<script src="/pxt-microbit/cm-share.js"></script>`;
-index = index.replace("</body>", `${banner}${shareScript}</body>`);
+const brandingScript = `<script src="/pxt-microbit/cm-branding.js"></script>`;
+index = index.replace("</body>", `${banner}${brandingScript}${shareScript}</body>`);
 writeFileSync(indexPath, index);
 
 const manifest = {
