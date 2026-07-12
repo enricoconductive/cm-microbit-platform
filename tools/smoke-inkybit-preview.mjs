@@ -42,8 +42,8 @@ try {
     await page.setViewport({ width: 1440, height: 1000 });
     await page.goto(`http://127.0.0.1:${port}/pxt-microbit/`, { waitUntil: "networkidle2" });
     await page.waitForSelector(".newprojectcard", { visible: true, timeout: 30000 });
-    assert.equal(await page.title(), "DEVELOPMENT PREVIEW - Inky:Bit Image Editor");
-    assert.match(await page.$eval("#inkybit-development-preview", el => el.textContent), /not public MakeCode/i);
+    assert.equal(await page.title(), "Conductive Music MakeCode for micro:bit");
+    assert.match(await page.$eval("#inkybit-development-preview", el => el.textContent), /Conductive Music MakeCode/i);
 
     const bundle = await page.evaluate(() => {
         const pkg = window.pxt?.appTarget?.bundledpkgs?.inkybit;
