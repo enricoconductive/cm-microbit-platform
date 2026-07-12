@@ -31,10 +31,10 @@ target.staticpkgdirs = {
     base: basePackages,
     extensions: [relativeExtension]
 };
-target.name = "DEVELOPMENT PREVIEW - Inky:Bit Image Editor";
-target.title = "DEVELOPMENT PREVIEW - Inky:Bit Image Editor";
-target.description = "Development-only Inky:Bit image editor; not the public MakeCode target.";
-target.appTheme.organization = "DEVELOPMENT PREVIEW - NOT PUBLIC MAKECODE";
+target.name = "Conductive Music MakeCode";
+target.title = "Conductive Music MakeCode for micro:bit";
+target.description = "A Blocks / JavaScript code editor for the micro:bit powered by Conductive Music.";
+target.appTheme.organization = "Conductive Music";
 target.appTheme.homeUrl = "./";
 target.appTheme.embedUrl = "./";
 target.appTheme.shareUrl = "./";

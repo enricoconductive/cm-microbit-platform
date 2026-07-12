@@ -1,9 +1,9 @@
 {
     "id": "microbit",
     "nickname": "microbit",
-    "name": "makecode.microbit.org",
-    "title": "Microsoft MakeCode for micro:bit",
-    "description": "A Blocks / JavaScript code editor for the micro:bit powered by Microsoft MakeCode.",
+    "name": "Conductive Music MakeCode",
+    "title": "Conductive Music MakeCode for micro:bit",
+    "description": "A Blocks / JavaScript code editor for the micro:bit powered by Conductive Music.",
     "corepkg": "core",
     "bundleddirs": [
         "libs/core",
@@ -46,7 +46,7 @@
                 "id": "microsoft",
                 "name": "Microsoft",
                 "icon": "/static/providers/microsoft-logo.svg",
-                "identity": true,
+                "identity": false,
                 "redirect": true,
                 "order": 1
             },
@@ -54,7 +54,7 @@
                 "id": "google",
                 "name": "Google",
                 "icon": "/static/providers/google-logo.svg",
-                "identity": true,
+                "identity": false,
                 "redirect": true,
                 "order": 2
             },
@@ -62,7 +62,7 @@
                 "id": "clever",
                 "name": "Clever",
                 "icon": "/static/providers/clever-logo.png",
-                "identity": true,
+                "identity": false,
                 "redirect": true,
                 "order": 3
             }
@@ -389,18 +389,19 @@
         "rawHID": true
     },
     "appTheme": {
-        "accentColor": "#5C005C",
-        "logoUrl": "https://microbit.org/",
-        "logo": "./static/logo.portrait.white.svg",
-        "docsLogo": "./static/logo.square.white.svg",
-        "portraitLogo": "./static/logo.square.white.svg",
-        "footerLogo": "./static/logo.portrait.black.svg",
-        "cardLogo": "./static/icons/apple-touch-icon.png",
-        "appLogo": "./static/icons/apple-touch-icon.png",
-        "organization": "Microsoft MakeCode",
-        "organizationUrl": "https://makecode.com/",
-        "organizationLogo": "./static/Microsoft_logo_rgb_W-white_D-square.png",
-        "organizationWideLogo": "./static/Microsoft_logo_rgb_W-white_D.png",
+        "accentColor": "#00A651",
+        "logoUrl": "https://conductivemusic.uk/",
+        "logo": "./static/cm-logo.png",
+        "logoWide": true,
+        "docsLogo": "./static/cm-logo.png",
+        "portraitLogo": "./static/cm-logo.png",
+        "footerLogo": "./static/cm-logo.png",
+        "cardLogo": "./static/cm-logo.png",
+        "appLogo": "./static/cm-logo.png",
+        "organization": "Conductive Music",
+        "organizationUrl": "https://conductivemusic.uk/",
+        "organizationLogo": "./static/cm-logo.png",
+        "organizationWideLogo": "./static/cm-logo.png",
         "homeScreenHero": {
             "imageUrl": "/static/herogallery/hero-banner.png",
             "name": "Flashing Heart",
@@ -409,12 +410,12 @@
             "cardType": "tutorial"
         },
         "homeScreenHeroGallery": "/hero-banner",
-        "homeUrl": "https://makecode.microbit.org/",
-        "embedUrl": "https://makecode.microbit.org/",
-        "shareUrl": "https://makecode.microbit.org/",
+        "homeUrl": "https://conductivemusic.uk/",
+        "embedUrl": "https://enricoconductive.github.io/pxt-microbit/",
+        "shareUrl": "https://enricoconductive.github.io/pxt-microbit/",
         "privacyUrl": "https://makecode.com/privacy",
         "termsOfUseUrl": "https://makecode.com/termsofuse",
-        "githubUrl": "https://github.com/Microsoft/pxt-microbit",
+        "githubUrl": "https://github.com/enricoconductive/pxt-microbit",
         "boardName": "micro:bit",
         "boardNickname": "micro:bit",
         "driveDisplayName": "MICROBIT",
@@ -449,7 +450,7 @@
         "docMenu": [
             {
                 "name": "Support",
-                "path": "https://support.microbit.org/"
+                "path": "https://conductivemusic.uk/"
             },
             {
                 "name": "Reference",
@@ -460,8 +461,8 @@
                 "path": "/device"
             },
             {
-                "name": "Buy",
-                "path": "https://microbit.org/buy/"
+                "name": "Conductive Music",
+                "path": "https://conductivemusic.uk/"
             }
         ],
         "hasReferenceDocs": true,

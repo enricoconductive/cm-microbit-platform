@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conductive Music - Shared Project</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { background: white; border-radius: 12px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 4px 16px rgba(0,0,0,0.1); text-align: center; }
+        .logo { width: 120px; margin-bottom: 16px; }
+        h1 { font-size: 20px; color: #333; margin-bottom: 8px; }
+        p { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+        .btn { display: inline-block; padding: 12px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; transition: transform 0.1s; }
+        .btn:hover { transform: scale(1.02); }
+        .btn-primary { background: #00A651; color: white; }
+        .btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
+        .error { color: #d32f2f; background: #fdecea; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+        .expired { color: #e65100; background: #fff3e0; }
+        .loading { color: #666; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="./static/cm-logo.png" alt="Conductive Music" class="logo">
+        <h1 id="title">Opening Shared Project...</h1>
+        <p id="message" class="loading">Please wait while we load the project.</p>
+        <div id="actions" style="display:none;"></div>
+    </div>
+    <script>
+    (function() {
+        var SHARE_PREFIX = "#share:";
+        var hash = window.location.hash;
+
+        if (!hash || hash.indexOf(SHARE_PREFIX) !== 0) {
+            showError("No project data found in this link.", false);
+            return;
+        }
+
+        var title = document.getElementById("title");
+        var message = document.getElementById("message");
+        var actions = document.getElementById("actions");
+
+        async function decompress(encoded) {
+            if (typeof DecompressionStream !== "undefined") {
+                try {
+                    var raw = Uint8Array.from(atob(encoded), function(c) { return c.charCodeAt(0); });
+                    var ds = new DecompressionStream("gzip");
+                    var writer = ds.writable.getWriter();
+                    writer.write(raw);
+                    writer.close();
+                    var reader = ds.readable.getReader();
+                    var chunks = [];
+                    while (true) {
+                        var result = await reader.read();
+                        if (result.done) break;
+                        chunks.push(result.value);
+                    }
+                    var totalLen = chunks.reduce(function(a, c) { return a + c.length; }, 0);
+                    var merged = new Uint8Array(totalLen);
+                    var offset = 0;
+                    chunks.forEach(function(c) { merged.set(c, offset); offset += c.length; });
+                    return new TextDecoder().decode(merged);
+                } catch(e) { /* fall through */ }
+            }
+            return decodeURIComponent(escape(atob(encoded)));
+        }
+
+        async function load() {
+            try {
+                var encoded = hash.substring(SHARE_PREFIX.length);
+                var payload = JSON.parse(await decompress(encoded));
+
+                if (payload.e && payload.e < Date.now()) {
+                    showError("This share link has expired (12-month limit).", true);
+                    return;
+                }
+
+                var projectData = payload.d;
+                if (!projectData || !projectData.files) {
+                    showError("Invalid project data.", false);
+                    return;
+                }
+
+                var projectName = (projectData.header && projectData.header.name) || "Shared Project";
+                title.textContent = projectName;
+                message.textContent = "Click below to open this project in the MakeCode editor.";
+                message.className = "";
+                actions.style.display = "block";
+
+                var expiryDate = new Date(payload.e);
+                var remaining = Math.ceil((payload.e - Date.now()) / (24 * 60 * 60 * 1000));
+
+                actions.innerHTML =
+                    '<p style="font-size:12px;color:#999;margin-bottom:16px;">Link expires in ' + remaining + ' days (' + expiryDate.toLocaleDateString() + ')</p>' +
+                    '<a class="btn btn-primary" href="./#' + encodeURIComponent(hash.substring(1)) + '" style="margin-bottom:8px;">Open in Editor</a><br>' +
+                    '<button class="btn btn-secondary" onclick="downloadProject()">Download .json</button>';
+
+                // Store project data for download
+                window._sharedProject = projectData;
+            } catch(e) {
+                showError("Could not load this project: " + e.message, false);
+            }
+        }
+
+        function showError(msg, isExpired) {
+            title.textContent = "Unable to Open Project";
+            message.textContent = msg;
+            message.className = "error " + (isExpired ? "expired" : "");
+            actions.style.display = "block";
+            actions.innerHTML = '<a class="btn btn-primary" href="./">Open MakeCode</a>';
+        }
+
+        window.downloadProject = function() {
+            var project = window._sharedProject;
+            if (!project) return;
+            var blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = (project.header && project.header.name || "shared-project") + ".json";
+            a.click();
+        };
+
+        load();
+    })();
+    </script>
+</body>
+</html>
