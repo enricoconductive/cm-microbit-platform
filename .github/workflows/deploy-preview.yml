@@ -83,6 +83,7 @@ jobs:
           npx pxt staticpkg --route pxt-microbit --output built/packaged --no-appcache
           npm run preview:finalize
           npm run preview:verify
+          npm run test:preview-pin
 
       - name: Install headless Chromium
         run: npx puppeteer browsers install chrome-headless-shell

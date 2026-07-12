@@ -45,6 +45,8 @@ assert.match(fieldSource, /private activeEditor: InkyImageEditor \| null/,
     "the field must own the editor lifetime");
 assert.match(fieldSource, /onDispose\(\)[\s\S]*?this\.activeEditor\.dispose\(\)/,
     "field disposal must close an active editor");
+assert.match(fieldSource, /if \(text\)[\s\S]*?this\.onValueChanged\(text\)[\s\S]*?new Uint8Array\(IBIT_PIXEL_COUNT\)/,
+    "a new empty shadow must initialize while non-empty source is reparsed after field construction");
 
 const editorSource = readFileSync(resolve(__dirname, "../../fieldeditors/inkyImageEditor.ts"), "utf8");
 const cancelBody = editorSource.match(/private cancel\(\) \{([\s\S]*?)\n    \}\n\n    \/\/ ── Callbacks/);

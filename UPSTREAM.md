@@ -19,9 +19,11 @@ an acceptable reduced editor.
 | `fieldeditors/inkyImageCodec.ts` | IBIT v1 validation, encode/decode and hex literal boundary |
 | `fieldeditors/inkyImageField.ts` | Blockly value/thumbnail/editor lifecycle only |
 | `fieldeditors/inkyImageEditor.ts` | Drawing UI and tools |
+| `fieldeditors/inkyImageEditorGeometry.ts` | Viewport transforms and clamped pan geometry |
 | `fieldeditors/inkyBitFont.ts` | Fixed 5x5 text glyph data |
 | `fieldeditors/extensions.ts` | Registers selector `inkyimage` |
 | `tests/inkybit-codec/*` | Golden, malformed, round-trip and literal tests |
+| `tests/inkybit-editor/*` | Geometry and field lifecycle regressions |
 
 No Pimoroni C++ driver, SPI code, package source, or hardware dependency belongs
 in the target PR. Capacity benchmarks and the extension integration fixture are
@@ -40,7 +42,7 @@ review evidence, not required upstream production files.
   TypeScript round trips.
 
 The concrete consumer is
-`enricoconductive/pxt-inkybit@39af70c3d257d65833c463641bb6eb963d64d09b`:
+`enricoconductive/pxt-inkybit@9474207126c4e33b670dac54973d0a803772e3c9`:
 `drawFullScreenImage(data: Buffer)` declares `data.shadow=inkyimage_picker`, and
 the hidden identity block declares `image.fieldEditor="inkyimage"`.
 

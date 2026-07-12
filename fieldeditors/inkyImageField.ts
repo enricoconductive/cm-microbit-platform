@@ -1,7 +1,10 @@
 /// <reference path="../node_modules/pxt-core/localtypings/pxtblockly.d.ts"/>
 /// <reference path="../node_modules/pxt-core/built/pxtsim.d.ts"/>
 
-import { IBIT_WIDTH, IBIT_HEIGHT, IBIT_ENCODED_LENGTH, decodeInkyBitImage } from "./inkyImageCodec";
+import {
+    IBIT_WIDTH, IBIT_HEIGHT, IBIT_PIXEL_COUNT, IBIT_ENCODED_LENGTH,
+    decodeInkyBitImage, encodeInkyBitImage, encodedImageToHexLiteral,
+} from "./inkyImageCodec";
 import { InkyImageEditor } from "./inkyImageEditor";
 
 const pxtblockly = pxt.blocks.requirePxtBlockly();
@@ -63,6 +66,11 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
 
     constructor(text: string, options: FieldInkyImageOptions, validator?: Function) {
         super(text, options, validator);
+        if (text) {
+            this.onValueChanged(text);
+        } else {
+            this.setValue(encodedImageToHexLiteral(encodeInkyBitImage(new Uint8Array(IBIT_PIXEL_COUNT))));
+        }
     }
 
     protected onInit(): void {

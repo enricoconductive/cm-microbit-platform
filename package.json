@@ -29,6 +29,7 @@
         "preview:prepare": "node tools/prepare-inkybit-preview.mjs",
         "preview:finalize": "node tools/finalize-inkybit-preview.mjs",
         "preview:verify": "node tools/verify-inkybit-preview.mjs",
+        "test:preview-pin": "node tools/test-preview-pin.mjs",
         "preview:smoke": "node tools/smoke-inkybit-preview.mjs"
     },
     "files": [
