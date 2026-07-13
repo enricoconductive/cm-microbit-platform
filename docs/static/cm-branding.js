@@ -4,10 +4,16 @@
     style.textContent = `
         .header-logo img,
         .ui.item.logo.brand img {
-            height: 2.4rem !important;
-            margin: 0 1.25rem !important;
+            height: 3.1rem !important;
+            width: auto !important;
+            margin: 0 1rem !important;
         }
         .header-org-logo { display: none !important; }
+        .menubar .ui.menu .brand:before {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+        .sim-label, .sim-wireframe .sim-label { display: none !important; }
     `;
     document.head.appendChild(style);
 

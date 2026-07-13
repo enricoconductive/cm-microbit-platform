@@ -18,6 +18,8 @@ const COLOUR_MAP: Record<number, string> = {
 
 const THUMB_WIDTH = 48;
 const THUMB_HEIGHT = 22;
+const PILL_WIDTH = 76;
+const PILL_HEIGHT = 30;
 
 function hexStringToBytes(hex: string): Uint8Array | null {
     const clean = hex.replace(/\s/g, '');
@@ -69,7 +71,11 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
         if (text) {
             this.onValueChanged(text);
         } else {
-            this.setValue(encodedImageToHexLiteral(encodeInkyBitImage(new Uint8Array(IBIT_PIXEL_COUNT))));
+            const initialValue = encodedImageToHexLiteral(encodeInkyBitImage(new Uint8Array(IBIT_PIXEL_COUNT)));
+            this.setValue(initialValue);
+            // FieldBase does not call the subclass parser while it is still
+            // constructing. Seed the decoded thumbnail explicitly.
+            this.onValueChanged(initialValue);
         }
     }
 
@@ -85,8 +91,12 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
     protected onValueChanged(newValue: string): string {
         const hex = extractHexFromExpr(newValue);
         if (!hex) {
-            this.errorBlock = true;
-            this.pixels = null;
+            // Blockly's unresolved toolbox placeholder is the sole non-literal
+            // value that can start a new image. All other expressions remain
+            // source-preserving and cannot be opened as a blank editor.
+            const isToolboxPlaceholder = newValue.trim() === 'inky:bit image';
+            this.errorBlock = !isToolboxPlaceholder;
+            this.pixels = isToolboxPlaceholder ? new Uint8Array(IBIT_PIXEL_COUNT) : null;
             return newValue;
         }
         try {
@@ -124,27 +134,27 @@ export class FieldInkyImage extends (pxtblockly.FieldBase as any) {
             const dataUrl = canvas.toDataURL();
 
             const bgRect = Blockly.utils.dom.createSvgElement('rect', {
-                'width': String(THUMB_WIDTH),
-                'height': String(THUMB_HEIGHT),
-                'rx': '4',
-                'ry': '4',
-                'fill': '#f0f0f0',
-                'stroke': '#ccc',
-                'stroke-width': '1',
+                'width': String(PILL_WIDTH),
+                'height': String(PILL_HEIGHT),
+                'rx': String(PILL_HEIGHT / 2),
+                'ry': String(PILL_HEIGHT / 2),
+                'fill': '#d8dde1',
+                'stroke': '#aeb8c0',
+                'stroke-width': '1.5',
             });
             group.appendChild(bgRect);
 
             const img = Blockly.utils.dom.createSvgElement('image', {
                 'href': dataUrl,
-                'width': String(THUMB_WIDTH),
-                'height': String(THUMB_HEIGHT),
-                'x': '0',
-                'y': '0',
+                'width': '58',
+                'height': '24',
+                'x': '9',
+                'y': '3',
             }) as unknown as SVGImageElement;
             this.thumbImage_ = img;
             group.appendChild(img);
 
-            this.size_ = { width: THUMB_WIDTH + 8, height: THUMB_HEIGHT + 8 } as any;
+            this.size_ = { width: PILL_WIDTH + 6, height: PILL_HEIGHT + 6 } as any;
         }
 
         (this as any).svgGroup_ = group;

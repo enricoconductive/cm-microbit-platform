@@ -56,7 +56,7 @@ try {
     assert.equal(headerBrand.count, 1, "header must contain one CM logo");
     assert.equal(headerBrand.organizationLogoCount, 0, "header must not render a second organisation logo");
     assert.equal(headerBrand.homeUrl, "https://conductivemusic.uk/", "Home must link to Conductive Music");
-    assert(Math.abs(parseFloat(headerBrand.height) - 38.4) < 0.01, "header logo must use the larger brand size");
+    assert(Math.abs(parseFloat(headerBrand.height) - 49.6) < 0.01, "header logo must use the larger brand size");
 
     const bundle = await page.evaluate(() => {
         const pkg = window.pxt?.appTarget?.bundledpkgs?.inkybit;
@@ -82,6 +82,12 @@ try {
     await page.evaluate(() => [...document.querySelectorAll(".blocklyTreeLabel")]
         .find(el => el.textContent.trim() === "Inky:Bit").click());
     await page.waitForSelector(".blocklyFlyout .inkybit_draw_full_screen_image", { visible: true });
+    const placeholder = await page.$eval(".blocklyFlyout .inkybit_draw_full_screen_image .blocklyEditableField", el => ({
+        text: el.textContent.trim(),
+        pill: !!el.querySelector("rect[rx='15']")
+    }));
+    assert.equal(placeholder.text, "", "Inky:Bit image field must not expose Blockly placeholder text");
+    assert.equal(placeholder.pill, true, "Inky:Bit image field must render as a rounded neutral pill");
 
     const flyoutBlock = await page.$eval(".blocklyFlyout .inkybit_draw_full_screen_image", el => el.getBoundingClientRect().toJSON());
     const onStart = await page.evaluate(() => {
@@ -116,8 +122,8 @@ try {
     const fieldPoint = await page.evaluate(() => {
         const block = [...document.querySelectorAll(".inkybit_draw_full_screen_image")]
             .find(el => !el.closest(".blocklyFlyout") && el.getBoundingClientRect().width > 0);
-        const fieldText = block.querySelector(".blocklyEditableField text");
-        const rect = fieldText.getBoundingClientRect();
+        const field = block.querySelector(".blocklyEditableField");
+        const rect = field.getBoundingClientRect();
         return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
     });
     await page.mouse.click(fieldPoint.x, fieldPoint.y);
@@ -139,7 +145,11 @@ try {
             }
         }
         const shell = root?.querySelector(".ib-editor-shell");
+        const topBar = root?.querySelector(".ib-topbar");
+        const toolRail = root?.querySelector(".ib-tool-rail");
         const canvas = root?.querySelector("#ib-canvas-wrap");
+        const inspector = root?.querySelector(".ib-inspector");
+        const bottomBar = root?.querySelector(".ib-bottombar");
         const rootRect = root?.getBoundingClientRect();
         const headerRect = header?.getBoundingClientRect();
         return {
@@ -150,7 +160,13 @@ try {
             viewportWidth: window.innerWidth,
             font: root ? getComputedStyle(root).fontFamily : "",
             background: root ? getComputedStyle(root).backgroundColor : "",
-            canvasHeight: canvas?.getBoundingClientRect().height
+            canvasHeight: canvas?.getBoundingClientRect().height,
+            topBarHeight: topBar?.getBoundingClientRect().height,
+            topBarBackground: topBar ? getComputedStyle(topBar).backgroundColor : "",
+            toolRailBackground: toolRail ? getComputedStyle(toolRail).backgroundColor : "",
+            canvasBackground: canvas ? getComputedStyle(canvas).backgroundColor : "",
+            inspectorBackground: inspector ? getComputedStyle(inspector).backgroundColor : "",
+            bottomBarBackground: bottomBar ? getComputedStyle(bottomBar).backgroundColor : ""
         };
     });
     assert(workspace.headerBottom > 0, "MakeCode header was not found while editing");
@@ -159,6 +175,13 @@ try {
     assert(Math.abs(workspace.shellWidth - workspace.viewportWidth) < 2, "editor retained modal-width geometry");
     assert(!/rgba\(0,\s*0,\s*0,\s*0\.55\)/.test(workspace.background), "legacy dimmed modal backdrop remains");
     assert(workspace.font.length > 0, "editor did not inherit a platform font");
+    assert(workspace.topBarHeight <= 54,
+        `editor toolbar must remain compact beneath the MakeCode header (got ${workspace.topBarHeight}px)`);
+    assert.equal(workspace.topBarBackground, "rgb(255, 255, 255)", "editor toolbar must be white");
+    assert.equal(workspace.toolRailBackground, "rgb(255, 255, 255)", "editor tool rail must be white");
+    assert.equal(workspace.canvasBackground, "rgb(41, 45, 51)", "editor canvas stage must be dark and neutral");
+    assert.equal(workspace.inspectorBackground, "rgb(250, 250, 250)", "editor inspector must use restrained white chrome");
+    assert.equal(workspace.bottomBarBackground, "rgb(242, 243, 244)", "editor footer must use neutral grey chrome");
 
     const canvasRect = await page.$eval("#ib-canvas-wrap canvas", el => el.getBoundingClientRect().toJSON());
     assert(canvasRect, "image editor canvas did not open");
@@ -170,8 +193,7 @@ try {
     const reopenedFieldPoint = await page.evaluate(() => {
         const block = [...document.querySelectorAll(".inkybit_draw_full_screen_image")]
             .find(el => !el.closest(".blocklyFlyout") && el.getBoundingClientRect().width > 0);
-        const rect = block.querySelector(".blocklyEditableField text, .blocklyEditableField image")
-            .getBoundingClientRect();
+        const rect = block.querySelector(".blocklyEditableField").getBoundingClientRect();
         return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
     });
     await page.mouse.click(reopenedFieldPoint.x, reopenedFieldPoint.y);

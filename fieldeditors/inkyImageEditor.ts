@@ -194,7 +194,7 @@ export class InkyImageEditor {
     private buildDOM() {
         this.installThemeStyles();
         const ov = this.el("div",
-            "position:fixed;left:0;right:0;bottom:0;z-index:49;display:flex;font-size:13px;");
+            "position:fixed;left:0;right:0;bottom:0;z-index:2000;display:flex;font-size:13px;");
         ov.id = "ib-editor-workspace";
         this.overlay = ov;
 
@@ -310,7 +310,7 @@ export class InkyImageEditor {
         const palRow = this.el("div", "display:flex;gap:6px;");
         for (const [code, hex] of Object.entries(COLOUR_MAP)) {
             const b = this.el("button",
-                `width:30px;height:30px;border-radius:4px;cursor:pointer;border:2px solid ${Number(code) === this.colour ? "#0078d7" : "#bbb"};background:${hex};`);
+                `width:30px;height:30px;border-radius:4px;cursor:pointer;border:2px solid ${Number(code) === this.colour ? "var(--pxt-primary-background, #00A651)" : "#bbb"};background:${hex};`);
             b.dataset.colour = code;
             b.onclick = () => this.setColour(Number(code));
             b.className = "ib-colour-btn";
@@ -332,7 +332,7 @@ export class InkyImageEditor {
 
         // viewport indicator drawn over thumb
         const vpIndicator = this.el("div",
-            "position:absolute;border:1.5px solid rgba(0,120,215,.8);pointer-events:none;display:none;");
+            "position:absolute;border:1.5px solid rgba(0,166,81,.9);pointer-events:none;display:none;");
         rightPanel.style.position = "relative";
         rightPanel.appendChild(vpIndicator);
         (vpIndicator as any)._update = (zoom: number, px: number, py: number) => {
@@ -393,6 +393,7 @@ export class InkyImageEditor {
         this.appHeader = this.findApplicationHeader();
         document.body.appendChild(ov);
         this.observeWorkspace();
+        requestAnimationFrame(() => this.fitToView());
 
         // attach pointer events to canvasWrap
         this.attachPointerHandlers(canvasWrap);
@@ -403,19 +404,25 @@ export class InkyImageEditor {
         const style = document.createElement("style");
         style.id = "ib-editor-theme";
         style.textContent = `
-            #ib-editor-workspace { background:var(--pxt-target-background1, #f3f3f3); color:var(--pxt-target-foreground1, #202124); font-family:var(--body-font-family, system-ui, sans-serif); }
-            #ib-editor-workspace .ib-editor-shell { background:var(--pxt-target-background1, #fff); }
-            #ib-editor-workspace .ib-topbar, #ib-editor-workspace .ib-bottombar, #ib-editor-workspace .ib-inspector { background:var(--pxt-target-background2, #f7f7f7) !important; color:var(--pxt-target-foreground2, #202124); border-color:var(--pxt-target-stencil2, #d0d0d0) !important; }
-            #ib-editor-workspace .ib-tool-rail { background:var(--pxt-target-background2, #f0f0f0) !important; border-color:var(--pxt-target-stencil2, #d0d0d0) !important; }
-            #ib-editor-workspace #ib-canvas-wrap { background:var(--pxt-neutral-alpha10, #e8e8e8) !important; }
-            #ib-editor-workspace button, #ib-editor-workspace input, #ib-editor-workspace select { font:inherit; color:inherit; border-color:var(--pxt-target-stencil2, #bbb) !important; background:var(--pxt-target-background1, #fff); }
+            #ib-editor-workspace { background:#292d33; color:#30343a; font-family:var(--body-font-family, system-ui, sans-serif); }
+            #ib-editor-workspace .ib-editor-shell { background:#292d33; }
+            #ib-editor-workspace .ib-topbar { box-sizing:border-box; min-height:44px; padding:6px 10px; background:#fff !important; color:#30343a !important; border:0 !important; border-bottom:1px solid #d7dade !important; box-shadow:0 1px 3px #0002; z-index:1; }
+            #ib-editor-workspace .ib-bottombar { min-height:34px; padding:4px 10px !important; background:#f2f3f4 !important; color:#42474d; border-color:#c9cdd2 !important; }
+            #ib-editor-workspace .ib-inspector { width:218px !important; padding:12px !important; gap:10px !important; background:#fafafa !important; color:#30343a; border-color:#c9cdd2 !important; box-shadow:-1px 0 2px #0001; }
+            #ib-editor-workspace .ib-tool-rail { width:44px !important; padding:6px 5px; gap:4px; background:#fff !important; border-color:#c9cdd2 !important; box-shadow:1px 0 2px #0001; }
+            #ib-editor-workspace #ib-canvas-wrap { background:#292d33 !important; background-image:radial-gradient(#42474e 1px, transparent 1px) !important; background-size:16px 16px !important; }
+            #ib-editor-workspace button, #ib-editor-workspace input, #ib-editor-workspace select { font:inherit; color:#30343a; border-color:#c5c9ce !important; border-radius:4px !important; background:#fff; box-shadow:none; }
+            #ib-editor-workspace button:hover { background:#f1f2f3; border-color:#9da3aa !important; }
+            #ib-editor-workspace .ib-topbar button { min-height:30px; padding:5px 9px !important; }
+            #ib-editor-workspace .ib-topbar span:first-child { font-size:14px; font-weight:700; letter-spacing:0; }
             #ib-editor-workspace button:focus-visible, #ib-editor-workspace input:focus-visible, #ib-editor-workspace select:focus-visible { outline:3px solid var(--pxt-focus-border, #00A651); outline-offset:2px; }
-            #ib-editor-workspace .ib-tool-btn[style*="rgb(0, 120, 215)"], #ib-editor-workspace .ib-size-btn[style*="rgb(0, 120, 215)"] { background:var(--pxt-primary-background, #00A651) !important; border-color:var(--pxt-primary-background, #00A651) !important; color:var(--pxt-primary-foreground, #fff) !important; }
-            #ib-editor-workspace .ib-topbar button:last-child, #ib-editor-workspace .ib-editor-shell button[style*="background: rgb(0, 120, 215)"] { background:var(--pxt-primary-background, #00A651) !important; border-color:var(--pxt-primary-background, #00A651) !important; color:var(--pxt-primary-foreground, #fff) !important; }
+            #ib-editor-workspace .ib-tool-btn { width:32px !important; height:32px !important; border-radius:4px !important; }
+            #ib-editor-workspace .ib-tool-btn[style*="var(--pxt-primary-background"], #ib-editor-workspace .ib-size-btn[style*="var(--pxt-primary-background"], #ib-editor-workspace .ib-topbar button:last-child { background:var(--pxt-primary-background, #00A651) !important; border-color:var(--pxt-primary-background, #00A651) !important; color:var(--pxt-primary-foreground, #fff) !important; }
+            #ib-editor-workspace .ib-inspector canvas { width:194px !important; height:93px !important; border-radius:3px !important; background:#fff; }
             @media (max-width: 760px) {
                 #ib-editor-workspace .ib-middle { flex-direction:column; }
                 #ib-editor-workspace .ib-tool-rail { width:100% !important; flex-direction:row; min-height:42px; overflow-x:auto; }
-                #ib-editor-workspace .ib-inspector { width:100% !important; max-height:148px; flex-direction:row; flex-wrap:wrap; overflow-y:auto; border-left:0 !important; border-top:1px solid var(--pxt-target-stencil2, #d0d0d0); }
+                #ib-editor-workspace .ib-inspector { width:100% !important; max-height:148px; flex-direction:row; flex-wrap:wrap; overflow-y:auto; border-left:0 !important; border-top:1px solid #c9cdd2; }
                 #ib-editor-workspace .ib-inspector canvas { width:92px !important; height:44px !important; }
             }
         `;
@@ -478,9 +485,9 @@ export class InkyImageEditor {
             for (const btn of Array.from(wrap.querySelectorAll("button")) as HTMLButtonElement[]) {
                 const mode = btn.dataset.mode!;
                 const active = (mode === "filled") === filled;
-                btn.style.background = active ? "#0078d7" : "#fff";
+                btn.style.background = active ? "var(--pxt-primary-background, #00A651)" : "#fff";
                 btn.style.color = active ? "#fff" : "";
-                btn.style.borderColor = active ? "#0078d7" : "#bbb";
+                btn.style.borderColor = active ? "var(--pxt-primary-background, #00A651)" : "#bbb";
             }
         }
     }
@@ -516,7 +523,7 @@ export class InkyImageEditor {
         tp.appendChild(sizeRow);
 
         const placeBtn = this.btn("Place text",
-            "margin-top:4px;width:100%;padding:5px;border:1px solid #0078d7;border-radius:4px;background:#0078d7;color:#fff;cursor:pointer;font-size:12px;font-weight:600;",
+            "margin-top:4px;width:100%;padding:5px;border:1px solid var(--pxt-primary-background, #00A651);border-radius:4px;background:var(--pxt-primary-background, #00A651);color:var(--pxt-primary-foreground, #fff);cursor:pointer;font-size:12px;font-weight:600;",
             () => this.placeText());
         tp.appendChild(placeBtn);
     }
@@ -823,7 +830,7 @@ export class InkyImageEditor {
         }
 
         const ctx = this.ctx;
-        ctx.fillStyle = "#e8e8e8";
+        ctx.fillStyle = "#292d33";
         ctx.fillRect(0, 0, cw, ch);
 
         ctx.save();
