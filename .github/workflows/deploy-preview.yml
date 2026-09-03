@@ -1,4 +1,4 @@
-name: Inky:Bit development preview
+name: Deploy Conductive Music MakeCode
 
 on:
   push:
@@ -21,24 +21,34 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       extension-sha: ${{ steps.pins.outputs.extension }}
+      music-blocks-sha: ${{ steps.pins.outputs.music-blocks }}
     steps:
       - name: Check out the exact target revision
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Read the extension pin
+      - name: Read the extension pins
         id: pins
         run: |
           extension="$(node -p 'require("./inkybit-toolchain.json").extension.commit')"
+          music="$(node -p 'require("./inkybit-toolchain.json").musicBlocks.commit')"
           echo "extension=$extension" >> "$GITHUB_OUTPUT"
+          echo "music-blocks=$music" >> "$GITHUB_OUTPUT"
 
-      - name: Check out the exact extension revision
+      - name: Check out the exact Inky:Bit extension revision
         uses: actions/checkout@v4
         with:
-          repository: enricoconductive/pxt-inkybit
+          repository: enricoconductive/cm-inkybit
           ref: ${{ steps.pins.outputs.extension }}
           path: libs/inkybit
+
+      - name: Check out the exact CM music blocks revision
+        uses: actions/checkout@v4
+        with:
+          repository: enricoconductive/cm-music-blocks
+          ref: ${{ steps.pins.outputs.music-blocks }}
+          path: libs/cm-music-blocks
 
       - name: Use the pinned Node.js release
         uses: actions/setup-node@v4
@@ -53,14 +63,21 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git -C libs/inkybit rev-parse HEAD)" = "${{ steps.pins.outputs.extension }}"
+          test "$(git -C libs/cm-music-blocks rev-parse HEAD)" = "${{ steps.pins.outputs.music-blocks }}"
           git merge-base --is-ancestor "$(node -p 'require("./inkybit-toolchain.json").target.upstreamCommit')" HEAD
 
-      - name: Test the pinned extension
+      - name: Test the pinned Inky:Bit extension
         working-directory: libs/inkybit
         run: |
           npm ci
           npm run verify:default-image
           npm run test:native-loader
+          npm run test:extension
+
+      - name: Test the pinned CM music blocks against public MakeCode
+        working-directory: libs/cm-music-blocks
+        run: |
+          npm ci
           npm run test:extension
 
       - name: Install the locked target toolchain
@@ -80,7 +97,7 @@ jobs:
           cp pxtarget.json .preview/pxtarget.original.json
           trap 'cp .preview/pxtarget.original.json pxtarget.json' EXIT
           npm run preview:prepare
-          npx pxt staticpkg --route pxt-microbit --output built/packaged --no-appcache
+          npx pxt staticpkg --route cm-microbit-platform --output built/packaged --no-appcache
           npm run preview:finalize
           npm run preview:verify
           npm run test:preview-pin
@@ -94,7 +111,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: built/packaged/pxt-microbit
+          path: built/packaged/cm-microbit-platform
 
   deploy:
     if: github.event_name == 'push'

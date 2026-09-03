@@ -42,7 +42,7 @@ review evidence, not required upstream production files.
   TypeScript round trips.
 
 The concrete consumer is
-`enricoconductive/pxt-inkybit@9474207126c4e33b670dac54973d0a803772e3c9`:
+`enricoconductive/cm-inkybit@9474207126c4e33b670dac54973d0a803772e3c9`:
 `drawFullScreenImage(data: Buffer)` declares `data.shadow=inkyimage_picker`, and
 the hidden identity block declares `image.fieldEditor="inkyimage"`.
 

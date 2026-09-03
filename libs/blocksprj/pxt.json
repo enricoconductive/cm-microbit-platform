@@ -4,7 +4,8 @@
         "core": "file:../core",
         "radio": "file:../radio",
         "microphone": "file:../microphone",
-        "inkybit": "file:../inkybit"
+        "inkybit": "file:../inkybit",
+        "cm-music-blocks": "file:../cm-music-blocks"
     },
     "description": "",
     "files": [

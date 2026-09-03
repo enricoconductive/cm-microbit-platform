@@ -56,7 +56,7 @@ writeFileSync(resolve(work, "pxt.json"), JSON.stringify({
     description: "Generated Ticket 05 capacity fixture",
     dependencies: {
         core: "file:../../../libs/core",
-        inkybit: `github:enricoconductive/pxt-inkybit#${commit}`,
+        inkybit: `github:enricoconductive/cm-inkybit#${commit}`,
         microphone: "*"
     },
     files: ["main.ts"]

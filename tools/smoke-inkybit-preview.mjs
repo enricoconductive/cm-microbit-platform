@@ -7,7 +7,7 @@ import puppeteer from "puppeteer";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const siteRoot = resolve(root, "built/packaged");
-const previewRoot = resolve(siteRoot, "pxt-microbit");
+const previewRoot = resolve(siteRoot, "cm-microbit-platform");
 const pins = JSON.parse(readFileSync(resolve(root, "inkybit-toolchain.json"), "utf8"));
 const manifest = JSON.parse(readFileSync(resolve(previewRoot, "inkybit-preview-manifest.json"), "utf8"));
 assert.equal(manifest.extension.commit, pins.extension.commit, "browser smoke extension revision does not match toolchain pin");
@@ -40,10 +40,10 @@ const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] 
 try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1000 });
-    await page.goto(`http://127.0.0.1:${port}/pxt-microbit/`, { waitUntil: "networkidle2" });
+    await page.goto(`http://127.0.0.1:${port}/cm-microbit-platform/`, { waitUntil: "networkidle2" });
     await page.waitForSelector(".newprojectcard", { visible: true, timeout: 30000 });
     assert.equal(await page.title(), "Conductive Music MakeCode for micro:bit");
-    assert.match(await page.$eval("#inkybit-development-preview", el => el.textContent), /Conductive Music MakeCode/i);
+    assert.equal(await page.$("#inkybit-development-preview"), null, "bottom banner must be gone");
     const headerBrand = await page.evaluate(() => {
         const logo = document.querySelector(".header-logo img, .ui.item.logo.brand img");
         return {
@@ -63,11 +63,11 @@ try {
         return pkg && JSON.stringify(pkg);
     });
     assert(bundle?.includes("inkyimage_picker"), "browser target lacks the pinned selector consumer");
-    const fieldBundle = await page.goto(`http://127.0.0.1:${port}/pxt-microbit/fieldeditors.js`);
+    const fieldBundle = await page.goto(`http://127.0.0.1:${port}/cm-microbit-platform/fieldeditors.js`);
     assert.equal(fieldBundle.status(), 200, "field editor bundle is not browser-loadable");
     assert((await fieldBundle.text()).includes('selector: "inkyimage"'), "field bundle lacks selector registration");
 
-    await page.goto(`http://127.0.0.1:${port}/pxt-microbit/`, { waitUntil: "networkidle2" });
+    await page.goto(`http://127.0.0.1:${port}/cm-microbit-platform/`, { waitUntil: "networkidle2" });
     await page.waitForSelector(".newprojectcard", { visible: true, timeout: 30000 });
     await page.click(".newprojectcard");
     await page.waitForSelector("#projectNameInput", { visible: true });
@@ -79,6 +79,17 @@ try {
 
     await page.waitForFunction(() => [...document.querySelectorAll(".blocklyTreeLabel")]
         .some(el => el.textContent.trim() === "Inky:Bit"), { timeout: 30000 });
+    assert(await page.evaluate(() => [...document.querySelectorAll(".blocklyTreeLabel")]
+        .some(el => el.textContent.trim() === "C Music")), "C Music category must be in the toolbox of a new project");
+    const cmIcon = await page.evaluate(() => {
+        const icon = document.querySelector('.blocklyTreeRow[data-ns="cm"] .blocklyTreeIcon.pxt-toolbox-icon');
+        if (!icon) return undefined;
+        const style = getComputedStyle(icon);
+        return { image: style.backgroundImage, color: style.color };
+    });
+    assert(cmIcon, "C Music category row must carry the cm namespace");
+    assert(/data:image\/svg\+xml/.test(cmIcon.image), "C Music category must show the CM waveform mark");
+    assert.equal(cmIcon.color, "rgba(0, 0, 0, 0)", "C Music category must hide the fallback glyph behind the mark");
     await page.evaluate(() => [...document.querySelectorAll(".blocklyTreeLabel")]
         .find(el => el.textContent.trim() === "Inky:Bit").click());
     await page.waitForSelector(".blocklyFlyout .inkybit_draw_full_screen_image", { visible: true });

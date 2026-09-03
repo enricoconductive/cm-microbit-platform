@@ -1,0 +1,44 @@
+/*
+ * Conductive Music toolbox styling.
+ *
+ * tools/finalize-inkybit-preview.mjs copies this file beside the static
+ * editor and links it from index.html.
+ *
+ * The cm-music-blocks extension declares a Font Awesome glyph as its category
+ * icon so that it still looks right when a pupil adds it to the standard
+ * MakeCode editor. Here, on our own editor, we hide that glyph and paint the
+ * stylised Conductive Music waveform mark in the logo's own colours (blue
+ * plug, violet and red wave, orange jack). The category bar and its blocks
+ * keep the category colour declared by the extension.
+ */
+.blocklyTreeRow[data-ns="cm"] .blocklyTreeIcon.pxt-toolbox-icon {
+    /* PXT sets `background: none !important` on non-image icons, so every
+       background property here must be !important too. */
+    color: transparent !important;
+    width: 30px;
+    height: 100%;
+    background-color: transparent !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80'><defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='20' y1='0' x2='150' y2='0'><stop offset='0' stop-color='%233954A5'/><stop offset='0.25' stop-color='%237B4E81'/><stop offset='0.42' stop-color='%23EE3926'/><stop offset='0.65' stop-color='%23F26924'/><stop offset='1' stop-color='%23F7931E'/></linearGradient></defs><g fill='none' stroke='url(%23g)' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'><path d='M40 24A19 19 0 1 0 45 56'/><path d='M33 13L45 21'/><path d='M41 7L53 15'/><path d='M45 56C50 52 53 50 57 50C60 50 62 52 64 52C68 52 68 8 71 8C74 8 74 64 78 64C81 64 82 50 86 50C90 50 92 42 97 42C102 42 104 52 109 52C114 52 116 46 121 46L134 34'/><path d='M134 34L142 26L126 62L148 62'/></g></svg>") !important;
+    background-size: 28px auto !important;
+    background-repeat: no-repeat !important;
+    background-position: 50% 50% !important;
+}
+
+/*
+ * A selected category row is filled with the category colour, so the
+ * orange end of the gradient would disappear. Switch to a plain white mark
+ * there, the way PXT inverts its own image icons.
+ */
+.blocklyTreeSelected[data-ns="cm"] .blocklyTreeIcon.pxt-toolbox-icon,
+.blocklyTreeSelected .blocklyTreeRow[data-ns="cm"] .blocklyTreeIcon.pxt-toolbox-icon {
+    background-image: none !important;
+    background-color: var(--pxt-target-background3) !important;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80'><g fill='none' stroke='%23000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'><path d='M40 24A19 19 0 1 0 45 56'/><path d='M33 13L45 21'/><path d='M41 7L53 15'/><path d='M45 56C50 52 53 50 57 50C60 50 62 52 64 52C68 52 68 8 71 8C74 8 74 64 78 64C81 64 82 50 86 50C90 50 92 42 97 42C102 42 104 52 109 52C114 52 116 46 121 46L134 34'/><path d='M134 34L142 26L126 62L148 62'/></g></svg>");
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 80'><g fill='none' stroke='%23000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'><path d='M40 24A19 19 0 1 0 45 56'/><path d='M33 13L45 21'/><path d='M41 7L53 15'/><path d='M45 56C50 52 53 50 57 50C60 50 62 52 64 52C68 52 68 8 71 8C74 8 74 64 78 64C81 64 82 50 86 50C90 50 92 42 97 42C102 42 104 52 109 52C114 52 116 46 121 46L134 34'/><path d='M134 34L142 26L126 62L148 62'/></g></svg>");
+    -webkit-mask-size: 28px auto;
+    mask-size: 28px auto;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: 50% 50%;
+    mask-position: 50% 50%;
+}

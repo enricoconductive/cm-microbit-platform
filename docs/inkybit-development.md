@@ -12,13 +12,13 @@ The target package pins pxt-core 13.0.1 and pxt-common-packages 14.0.2. Use Node
 
 Target checkout:
 
-    origin    https://github.com/enricoconductive/pxt-microbit.git
+    origin    https://github.com/enricoconductive/cm-microbit-platform.git
     upstream  https://github.com/microsoft/pxt-microbit.git
     branch    feature/inkybit-image-editor-v1
 
 Extension checkout:
 
-    origin    https://github.com/enricoconductive/pxt-inkybit.git
+    origin    https://github.com/enricoconductive/cm-inkybit.git
     upstream  https://github.com/pimoroni/pxt-inkybit.git
     branch    feature/inkybit-image-editor-v1
 

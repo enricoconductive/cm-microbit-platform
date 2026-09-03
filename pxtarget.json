@@ -21,7 +21,8 @@
         "libs/fonts",
         "libs/color",
         "libs/audio-recording",
-        "libs/inkybit"
+        "libs/inkybit",
+        "libs/cm-music-blocks"
     ],
     "cloud": {
         "workspace": false,
@@ -412,7 +413,7 @@
         "shareUrl": "./",
         "privacyUrl": "https://makecode.com/privacy",
         "termsOfUseUrl": "https://makecode.com/termsofuse",
-        "githubUrl": "https://github.com/enricoconductive/pxt-microbit",
+        "githubUrl": "https://github.com/enricoconductive/cm-microbit-platform",
         "boardName": "micro:bit",
         "boardNickname": "micro:bit",
         "driveDisplayName": "MICROBIT",

@@ -4,39 +4,41 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const output = resolve(root, process.env.PREVIEW_OUTPUT || "built/packaged/pxt-microbit");
+const output = resolve(root, process.env.PREVIEW_OUTPUT || "built/packaged/cm-microbit-platform");
 const pins = JSON.parse(readFileSync(resolve(root, "inkybit-toolchain.json"), "utf8"));
 const indexPath = resolve(output, "index.html");
 let index = readFileSync(indexPath, "utf8");
 assert(index.includes("</body>"), "static package index has no body element");
+
+// Strip anything a previous run injected so the script is idempotent.
 index = index
     .replace(/<div id="inkybit-development-preview"[\s\S]*?<\/div>/g, "")
-    .replace(/<script src="\/pxt-microbit\/cm-branding\.js"><\/script>/g, "")
-    .replace(/<script src="\/pxt-microbit\/cm-share\.js"><\/script>/g, "");
+    .replace(/<style>\.blocklyTreeRow\[data-ns="cm"\][\s\S]*?<\/style>/g, "")
+    .replace(/<link rel="stylesheet" href="\/cm-microbit-platform\/cm-toolbox\.css">/g, "")
+    .replace(/<script src="\/cm-microbit-platform\/cm-branding\.js"><\/script>/g, "")
+    .replace(/<script src="\/cm-microbit-platform\/cm-share\.js"><\/script>/g, "");
 
-// Copy CM share page and custom share script to the output
-const shareSrc = resolve(root, "docs/static/share.html");
-const shareScriptSrc = resolve(root, "docs/static/cm-share.js");
-const brandingScriptSrc = resolve(root, "docs/static/cm-branding.js");
-if (existsSync(shareSrc)) {
-    copyFileSync(shareSrc, resolve(output, "share.html"));
-}
-if (existsSync(shareScriptSrc)) {
-    copyFileSync(shareScriptSrc, resolve(output, "cm-share.js"));
-}
-if (existsSync(brandingScriptSrc)) {
-    copyFileSync(brandingScriptSrc, resolve(output, "cm-branding.js"));
+// Copy the CM share page, scripts and toolbox stylesheet beside the editor.
+const staticFiles = [
+    ["docs/static/share.html", "share.html"],
+    ["docs/static/cm-share.js", "cm-share.js"],
+    ["docs/static/cm-branding.js", "cm-branding.js"],
+    ["docs/static/cm-toolbox.css", "cm-toolbox.css"]
+];
+for (const [source, destination] of staticFiles) {
+    const from = resolve(root, source);
+    if (existsSync(from)) copyFileSync(from, resolve(output, destination));
 }
 
-const banner = `<div id="inkybit-development-preview" role="status" style="position:fixed;z-index:2147483647;left:0;right:0;bottom:0;padding:8px 12px;background:#00A651;color:white;font:700 14px sans-serif;text-align:center;box-shadow:0 -2px 5px #0006">Conductive Music MakeCode - Inky:Bit Image Editor</div>`;
-const shareScript = `<script src="/pxt-microbit/cm-share.js"></script>`;
-const brandingScript = `<script src="/pxt-microbit/cm-branding.js"></script>`;
-index = index.replace("</body>", `${banner}${brandingScript}${shareScript}</body>`);
+const toolboxStyle = `<link rel="stylesheet" href="/cm-microbit-platform/cm-toolbox.css">`;
+const shareScript = `<script src="/cm-microbit-platform/cm-share.js"></script>`;
+const brandingScript = `<script src="/cm-microbit-platform/cm-branding.js"></script>`;
+index = index.replace("</body>", `${toolboxStyle}${brandingScript}${shareScript}</body>`);
 writeFileSync(indexPath, index);
 
 const manifest = {
     schemaVersion: 1,
-    label: "Conductive Music MakeCode - Inky:Bit Image Editor",
+    label: "Conductive Music MakeCode",
     target: {
         repository: pins.target.repository,
         commit: process.env.PREVIEW_TARGET_SHA || "LOCAL_WORKTREE",
@@ -47,6 +49,10 @@ const manifest = {
     extension: {
         repository: pins.extension.repository,
         commit: pins.extension.commit
+    },
+    musicBlocks: {
+        repository: pins.musicBlocks.repository,
+        commit: pins.musicBlocks.commit
     }
 };
 writeFileSync(resolve(output, "inkybit-preview-manifest.json"), JSON.stringify(manifest, null, 2) + "\n");

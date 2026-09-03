@@ -6,11 +6,11 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const source = resolve(root, process.env.PREVIEW_OUTPUT || "built/packaged/pxt-microbit");
+const source = resolve(root, process.env.PREVIEW_OUTPUT || "built/packaged/cm-microbit-platform");
 const fixture = mkdtempSync(resolve(tmpdir(), "inkybit-stale-preview-"));
 
 try {
-    for (const file of ["index.html", "target.json", "inkybit-preview-manifest.json"]) {
+    for (const file of ["index.html", "target.json", "inkybit-preview-manifest.json", "cm-toolbox.css"]) {
         cpSync(resolve(source, file), resolve(fixture, file));
     }
     const manifestPath = resolve(fixture, "inkybit-preview-manifest.json");

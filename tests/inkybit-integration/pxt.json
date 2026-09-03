@@ -3,7 +3,7 @@
     "description": "Pinned Ticket 05 full-screen image integration fixture",
     "dependencies": {
         "core": "file:../../libs/core",
-        "inkybit": "github:enricoconductive/pxt-inkybit#9474207126c4e33b670dac54973d0a803772e3c9",
+        "inkybit": "github:enricoconductive/cm-inkybit#9474207126c4e33b670dac54973d0a803772e3c9",
         "microphone": "*"
     },
     "files": [
