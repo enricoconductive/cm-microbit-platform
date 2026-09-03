@@ -17,6 +17,6 @@
     },
     "musicBlocks": {
         "repository": "https://github.com/enricoconductive/cm-music-blocks.git",
-        "commit": "f9501712daf5e6af1ef2f037921f19cca8b75657"
+        "commit": "6e11acc1fe9379164bfc541f7ca38bade4b38060"
     }
 }
