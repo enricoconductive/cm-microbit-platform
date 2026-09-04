@@ -42,3 +42,22 @@
     -webkit-mask-position: 50% 50%;
     mask-position: 50% 50%;
 }
+
+/*
+ * Dropdown fields on C Music blocks are drawn white with dark text, instead
+ * of Blockly's default transparent box on the block colour, so pupils can
+ * spot the choices they can change. Blockly puts the block type as the
+ * first class on every block group, so this reaches all cm_* blocks.
+ */
+g[class^="cm_"] .blocklyDropdownRect {
+    fill: #ffffff !important;
+    stroke: #b96e17 !important;
+}
+/* PXT sets dropdown text to white with !important at (0,3,0); outrank it. */
+.pxt-renderer g[class^="cm_"] .blocklyDropdownField text.blocklyDropdownText,
+.pxt-renderer g[class^="cm_"] .blocklyDropdownField text {
+    fill: #333333 !important;
+}
+g[class^="cm_"] .blocklyDropdownField:hover .blocklyDropdownRect {
+    fill: #fff3e0 !important;
+}
